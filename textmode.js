@@ -63,30 +63,11 @@ var textmode = {
         this._rows = (options.rows === undefined) ? 25 : options.rows;
         this._characterSet = (options.characterSet === undefined) ? textmode.characterSets[0] : textmode.characterSets[options.characterSet];
 
-        this._colors = [
-            [0,0,0],        // black
-            [2,33,184],     //
-            [0,180,0],      //
-            [0,183,185],    //
-            [187,25,0],     //
-            [187,44,185],   //
-            [186,105,0],    //
-            [184,184,184],  // grey
-            [104,104,104],  // dark grey
-            [105,114,255],  //
-            [96,250,104],   //
-            [96,254,255],   //
-            [255,110,104],  //
-            [255,119,255],  //
-            [255,252,103],  //
-            [255,255,255]   // white
-        ];
-
         // cursor junk
         this._cursorX = 1;
         this._cursorY = 1;
-        this._fgColor = this._colors[7];
-        this._bgColor = this._colors[0];
+        this._fgColor = [184,184,184];
+        this._bgColor = [0,0,0];
 
         // set up canvas
         this._canvas = document.createElement('canvas');
@@ -154,32 +135,6 @@ textmode.display.prototype.move = function(col, row) {
 }
 
 /**
- * Set the foreground color by color index
- * @memberof textmode.display
- *
- * @param {int} color Index of the color in textmode.display._colors
- *
- * @return {object} textmode.display
- */
-textmode.display.prototype.foreColor = function(color) {
-    this._fgColor = this._colors[color];
-    return this;
-}
-
-/**
- * Set the background color by color index
- * @memberof textmode.display
- *
- * @param {int} color Index of the color in textmode.display._colors
- *
- * @return {object} textmode.display
- */
-textmode.display.prototype.backColor = function(color) {
-    this._bgColor = this._colors[color];
-    return this;
-}
-
-/**
  * Set the foreground color by array of RGB values
  * @memberof textmode.display
  *
@@ -187,7 +142,7 @@ textmode.display.prototype.backColor = function(color) {
  *
  * @return {object} textmode.display
  */
-textmode.display.prototype.foreColorRGB = function(RGBArray) {
+textmode.display.prototype.foreColor = function(RGBArray) {
     this._fgColor = RGBArray;
     return this;
 }
@@ -200,7 +155,7 @@ textmode.display.prototype.foreColorRGB = function(RGBArray) {
  *
  * @return {object} textmode.display
  */
-textmode.display.prototype.backColorRGB = function(RGBArray) {
+textmode.display.prototype.backColor = function(RGBArray) {
     this._bgColor = RGBArray;
     return this;
 }
