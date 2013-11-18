@@ -64,8 +64,8 @@ var textmode = {
         this._characterSet = (options.characterSet === undefined) ? textmode.characterSets[0] : textmode.characterSets[options.characterSet];
 
         // cursor junk
-        this._cursorX = 1;
-        this._cursorY = 1;
+        this._cursorX = 0;
+        this._cursorY = 0;
         this._fgColor = [184,184,184];
         this._bgColor = [0,0,0];
 
@@ -112,8 +112,8 @@ textmode.display.prototype.draw = function(charcode) {
 
     this._context.putImageData(
         cdata,
-        (this._cursorX*this._characterSet.characterWidth) - this._characterSet.characterWidth,
-        (this._cursorY*this._characterSet.characterHeight) - this._characterSet.characterHeight
+        this._cursorX*this._characterSet.characterWidth,
+        this._cursorY*this._characterSet.characterHeight
     );
 
     return this;
@@ -130,6 +130,16 @@ textmode.display.prototype.draw = function(charcode) {
  */
 textmode.display.prototype.move = function(col, row) {
     this._cursorX = col;
+    this._cursorY = row;
+    return this;
+}
+
+textmode.display.prototype.col = function col(col) {
+    this._cursorX = col;
+    return this;
+}
+
+textmode.display.prototype.row = function row(row) {
     this._cursorY = row;
     return this;
 }
