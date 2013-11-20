@@ -7,7 +7,6 @@
  * TODO:
  * Options - Carriage Return or Line Feed
  * Options - iCE color support
- * Sort out color palette
  */
 
 
@@ -16,49 +15,57 @@ function ansi(ansi_data, options) {
     this.options = (options !== undefined) ? options : {};
 
     this.palette = {
-        NORMAL: {
-            BLACK: [0,0,0],
-            RED: [187,25,0],
-            GREEN: [0,180,0],
-            YELLOW: [186,105,0],
-            BLUE: [2,33,184],
-            MAGENTA: [187,44,185],
-            CYAN: [0,183,185],
-            WHITE: [184,184,184]
+        BLACK: {
+            NORMAL: [0,0,0],
+            BOLD: [104,104,104]
         },
-        BOLD: {
-            BLACK: [104,104,104],
-            RED: [255,110,104],
-            GREEN: [96,250,104],
-            YELLOW: [255,252,103],
-            BLUE: [105,114,255],
-            MAGENTA: [255,119,255],
-            CYAN: [96,254,255],
-            WHITE: [255,255,255]
+        RED: {
+            NORMAL: [185,25,0],
+            BOLD: [255,110,104]
+        },
+        GREEN: {
+            NORMAL: [0,180,0],
+            BOLD: [96,250,104]
+        },
+        YELLOW: {
+            NORMAL: [186,105,0],
+            BOLD: [255,252,103]
+        },
+        BLUE: {
+            NORMAL: [2,33,184],
+            BOLD: [105,114,255]
+        },
+        MAGENTA: {
+            NORMAL: [187,44,185],
+            BOLD: [255,119,255]
+        },
+        CYAN: {
+            NORMAL: [0,183,185],
+            BOLD: [96,254,255]
+        },
+        WHITE: {
+            NORMAL: [184,184,184],
+            BOLD: [255,255,255]
         }
-    };
+    }
 
-    this.colors = {
-        FOREGROUND: {
-            30: this.palette.NORMAL.BLACK,
-            31: this.palette.NORMAL.RED,
-            32: this.palette.NORMAL.GREEN,
-            33: this.palette.NORMAL.YELLOW,
-            34: this.palette.NORMAL.BLUE,
-            35: this.palette.NORMAL.MAGENTA,
-            36: this.palette.NORMAL.CYAN,
-            37: this.palette.NORMAL.WHITE
-        },
-        BACKGROUND: {
-            40: this.palette.NORMAL.BLACK,
-            41: this.palette.BOLD.RED,
-            42: this.palette.BOLD.GREEN,
-            43: this.palette.BOLD.YELLOW,
-            44: this.palette.BOLD.BLUE,
-            45: this.palette.BOLD.MAGENTA,
-            46: this.palette.BOLD.CYAN,
-            47: this.palette.BOLD.WHITE
-        }
+    this._colors = {
+        30: this.palette.BLACK, 
+        31: this.palette.RED,
+        32: this.palette.GREEN,
+        33: this.palette.YELLOW,
+        34: this.palette.BLUE,
+        35: this.palette.MAGENTA,
+        36: this.palette.CYAN,
+        37: this.palette.WHITE,
+        40: this.palette.BLACK, 
+        41: this.palette.RED,
+        42: this.palette.GREEN,
+        43: this.palette.YELLOW,
+        44: this.palette.BLUE,
+        45: this.palette.MAGENTA,
+        46: this.palette.CYAN,
+        47: this.palette.WHITE
     }
 
 
@@ -67,8 +74,8 @@ function ansi(ansi_data, options) {
     this._parser = new this.parser(ansi_data),
     this._columns = 80,
     this._rows = this.get_lines(),
-    this._fg = this.palette.NORMAL.WHITE,
-    this._bg = this.palette.NORMAL.BLACK,
+    this._fg = this.palette.WHITE,
+    this._bg = this.palette.BLACK,
     this._attributes = {
             BOLD: false,
             UNDERSCORE: false,
@@ -131,23 +138,25 @@ ansi.prototype.display = function display() {
 
                 if (param === 0) { // underscore
                     for (var attribute in that._attributes) that._attributes[attribute] = false;
-                    that._fg = that.palette.NORMAL.WHITE;
-                    that._bg = that.palette.NORMAL.BLACK;
-                    tm.foreColor(that._fg);
-                    tm.backColor(that._bg);
+                    that._fg = that.palette.WHITE;
+                    that._bg = that.palette.BLACK;
+                    tm.foreColor(that._fg.NORMAL);
+                    tm.backColor(that._bg.NORMAL);
                 } else if (param === 1) { // bold
                     that._attributes.BOLD = true;
-                    // need to set current color to bold
+                    tm.foreColor(that._fg.BOLD);
                 } else if (param === 4) { // underscore
                 } else if (param === 5) { // blink
                 } else if (param === 7) { // reverse
                 } else if (param === 8) { // concealed
-                } else if (that.colors.FOREGROUND[param] !== undefined) { // foreground
-                    //that._fg = that.palette[(that._attributes.BOLD) ? 'BOLD' : 'NORMAL'][that.colors.FOREGROUND[param]];
-                    //tm.foreColor(that._fg);
-                } else if (that.colors.BACKGROUND[param] !== undefined) { // background
-                    //that._bg = that.palette.NORMAL[that.colors.FOREGROUND[param]];
-                    //tm.backColor(that._bg);
+                } else if (that._colors[param] !== undefined) { // color
+                    if (param >= 30 && param <= 37) { // foreground
+                        that._fg = that._colors[param];
+                        tm.foreColor(that._fg[(that._attributes.BOLD) ? 'BOLD' : 'NORMAL']);
+                    } else if (param >= 40 && param <= 47) {
+                        that._bg = that._colors[param];
+                        tm.backColor(that._bg.NORMAL);
+                    }
                 } else {
                     // caught unexpected parameter
                 }
