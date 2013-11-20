@@ -1,16 +1,12 @@
 IBM Extended Character Set & ANSI in HTML & Canvas
 
-I started writing this in 2009 out of boredom and to get better aquainted with Javascript, Canvas, and the technologies
+I initially started writing this in 2009 out of boredom and to get better aquainted with Javascript, Canvas, and the technologies
 of my youth that I never had the attention span or resources to learn back then.
-
-I let this languish for a year or two. It's really bad code. Maybe throwing it on github will motivate me to rewrite it now
-that I don't suck at Javascript as much as I used to.
 
 TODO:
 
-- Rewrite into something slightly less shameful (in progress!)
-<del>- Better way to define character sets</del>
 - Support for non-9x16 characters (amiga? 80x50?)
 - High resolution 'VGA' mode ala aciddraw
-- >16 color support, pallete support
+- Configurable color palettes
+- iCE color support
 - Load in remote files
