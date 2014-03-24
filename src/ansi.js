@@ -1,40 +1,82 @@
-document.addEventListener('DOMContentLoaded', function() {
-	var ansi_elements = document.getElementsByTagName('img');
-	var re = new RegExp('\.ans$', 'i');
-	for (var i=0;i<ansi_elements.length;i++) {
-		if (ansi_elements[i].src.match(re)) {
-			replace_element(ansi_elements[i]);
-		}
-	}
-});
+function get_ansi_from_url(url, charset, success, error) {
 
-function replace_element(element) {
-
-	var options = {
-		'charset': (element.getAttribute('data-ansi-charset')) ? element.getAttribute('data-ansi-charset') : 'ISO-8859-1'
-	}
-
-	// grab the ansi file
 	var request = new XMLHttpRequest();
-	request.open('GET', element.src, true);
-	request.overrideMimeType('text/plain; charset='+options.charset);
-	request.onload = function(response) {
-		if (request.status >= 200 && request.status < 400) {
+	request.open('GET', url, true);
+	request.overrideMimeType('text/plain; charset='+charset)
 
-			var c = ansi(request.responseText);
-
-			element.parentElement.insertBefore(c, element);
-			element.parentElement.removeChild(element);
+	if (typeof success === 'function') {
+		request.onload = function(response) {
+			if (request.status >= 200 && request.status < 400) {
+				success(request.responseText);
+			} else {
+				// error
+			}
 		}
 	}
 
-	request.onerror = function(error) {
-
+	if (typeof error === 'function') {
+		request.error = error;
 	}
 
 	request.send();
 
 }
+
+function replace_all() {
+
+	var elements = [];
+
+	if ('querySelectorAll' in document) {
+		elements = document.querySelectorAll('[data-ansi-src]');
+	} else {
+
+		var document_elements = document.getElementsByTagName('*');
+
+		for (var i=0;i<document_elements.length;i++) {
+			if (document_elements[i].hasAttribute('data-ansi-src')) {
+				elements.push(elements[i]);
+			}
+		}
+
+	}
+
+	for (var i=0;i<elements.length;i++) {
+		if (!elements[i].hasAttribute('data-ansi-processed')) {
+			replace_element(elements[i]);
+		}
+	}
+
+}
+
+function replace_element(element) {
+
+	var url = element.getAttribute('data-ansi-src');
+	var charset = (element.hasAttribute('data-ansi-charset')) ? element.getAttribute('data-ansi-charset') : 'ISO-8859-1';
+
+	get_ansi_from_url(url, charset, function(ansi_data) {
+		var canvas_element = ansi(ansi_data);
+
+		element.parentElement.insertBefore(canvas_element, element);
+		element.parentElement.removeChild(element);
+
+		for (var i=0;i<element.attributes.length;i++) {
+
+			var attrName = element.attributes[i].nodeName;
+			var attrValue = element.attributes[i].nodeValue;
+
+			if (attrName !== 'width' && attrName !== 'height') {
+				canvas_element.setAttribute(attrName, attrValue);
+			}
+
+		}
+
+		canvas_element.setAttribute('data-ansi-processed', 'true');
+
+	});
+
+}
+
+document.addEventListener('DOMContentLoaded', replace_all);
 
 function ansi(data, options) {
 
@@ -135,11 +177,11 @@ function ansi(data, options) {
 		return lines;
 	}
 
-	var tm = new textmode.display({ cols: columns, rows: lines });
+	var display = new textmode.display({ cols: columns, rows: lines });
 
     parser.parse({
         DRAW: function(code) {
-            tm.move(cursor.x, cursor.y).draw(code);
+            display.move(cursor.x, cursor.y).draw(code);
 
             if (cursor.x < (columns-1)) {
                 cursor.x++;
@@ -157,11 +199,11 @@ function ansi(data, options) {
                     for (var attribute in attributes) attributes[attribute] = false;
                     fg = palette.WHITE;
                     bg = palette.BLACK;
-                    tm.foreColor(fg.NORMAL);
-                    tm.backColor(bg.NORMAL);
+                    display.foreColor(fg.NORMAL);
+                    display.backColor(bg.NORMAL);
                 } else if (param === 1) { // bold
                     attributes.BOLD = true;
-                    tm.foreColor(fg.BOLD);
+                    display.foreColor(fg.BOLD);
                 } else if (param === 4) { // underscore
                 } else if (param === 5) { // blink
                 } else if (param === 7) { // reverse
@@ -169,10 +211,10 @@ function ansi(data, options) {
                 } else if (colors[param] !== undefined) { // color
                     if (param >= 30 && param <= 37) { // foreground
                         fg = colors[param];
-                        tm.foreColor(fg[(attributes.BOLD) ? 'BOLD' : 'NORMAL']);
+                        display.foreColor(fg[(attributes.BOLD) ? 'BOLD' : 'NORMAL']);
                     } else if (param >= 40 && param <= 47) {
                         bg = colors[param];
-                        tm.backColor(bg.NORMAL);
+                        display.backColor(bg.NORMAL);
                     }
                 } else {
                     // caught unexpected parameter
@@ -185,7 +227,7 @@ function ansi(data, options) {
             var column = (arguments[1] !== undefined) ? arguments[1]: 0;
             cursor.x = column;
             cursor.y = line;
-            tm.move(cursor.x, cursor.y);
+            display.move(cursor.x, cursor.y);
         },
         MOVE_UP: function(amount) {
             if ((cursor.y - amount) < 0) {
@@ -199,7 +241,7 @@ function ansi(data, options) {
         },
         MOVE_RIGHT: function(amount) {
             cursor.x += amount;
-            tm.move(cursor.x, cursor.y);
+            display.move(cursor.x, cursor.y);
         },
         MOVE_LEFT: function(amount) {
             if ((cursor.x - amount) < 0) {
@@ -211,7 +253,7 @@ function ansi(data, options) {
         CLEAR_SCREEN: function() {
             cursor.x = 0,
             cursor.y = 0;
-            tm.move(cursor.x, cursor.y);
+            display.move(cursor.x, cursor.y);
 
         },
         CLEAR_LINE: function() {
@@ -224,17 +266,15 @@ function ansi(data, options) {
         LOAD_POSITION: function() {
             cursor.x = that._savedcursor.x,
             cursor.y = that._savedcursor.y;
-            tm.move(cursor.x, that_cursor.y);
+            display.move(cursor.x, that_cursor.y);
         },
         CARRIAGE_RETURN: function() {
             cursor.x = 0;
             cursor.y++;
-            tm.move(cursor.x, cursor.y);
+            display.move(cursor.x, cursor.y);
         }
     });
 
-
-	return tm.canvas();
+	return display.canvas();
 
 }
-
