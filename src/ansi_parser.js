@@ -1,3 +1,10 @@
+/**
+ * ansi_parser.js
+ * Parse a string for ansi control codes and execute callbacks
+ *
+ * Author: Josh <josh@kaiju.net>
+ */
+ 
 function ansi_parser(data) {
 
 	this.ACTIONS = {
