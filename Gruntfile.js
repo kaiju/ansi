@@ -12,7 +12,12 @@ module.exports = function(grunt) {
 			},
 			dist: {
 				files: {
-					"dist/ansi-min.js": ['src/*.js']
+					"dist/ansi-min.js": [
+						'src/ansi.js',
+						'src/ansi_parser.js',
+						'src/textmode.js',
+						'src/characterset-cp437.js'
+					]
 				}
 			}
 		},
