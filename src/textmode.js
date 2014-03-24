@@ -176,8 +176,3 @@ textmode.display.prototype.backColor = function(RGBArray) {
     this._bgColor = RGBArray;
     return this;
 }
-
-
-
-
-
