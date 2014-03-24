@@ -40,7 +40,7 @@ On DOM ready, each element with a `data-ansi-src` attribute is replaced with a `
 ### TODO
 
 
-
+* Column length/newline options
 * Add DOM mutation events to load ANSI on the fly
 * Configurable color palettes/iCE color support
 * Textmode: Support for non-9x16 characters (amiga? 80x50?)
