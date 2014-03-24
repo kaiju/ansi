@@ -1,4 +1,4 @@
-window.textmode.addCharacterSet({
+textmode.addCharacterSet({
     name: 'cp437',
     description: 'IBM PC CP437 9x16',
     characterWidth: 9,
