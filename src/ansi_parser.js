@@ -94,6 +94,8 @@ ansi_parser.prototype.parse = function parse(hooks) {
             if (typeof hooks.LINE_FEED === 'function') hooks.LINE_FEED.apply(null);
         } else if (this.data[i] === 13) { // carriage return
             if (typeof hooks.CARRIAGE_RETURN === 'function') hooks.CARRIAGE_RETURN.apply(null);
+        } else if (this.data[i] === 26) { // EOF
+            if (typeof hooks.EOF === 'function') hooks.EOF.apply(null);
         } else { // character
             if (typeof hooks.DRAW === 'function') hooks.DRAW.apply(null, [this.data[i]]);
         }

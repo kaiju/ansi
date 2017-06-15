@@ -167,10 +167,17 @@ function ansi(data, options) {
 					x++;
 				}
 			},
+            'MOVE_RIGHT': function(amount) {
+                x += amount;
+            },
 			'CARRIAGE_RETURN': function() {
 				x = 0;
 				y++;
-			}
+			},
+            'EOF': function() {
+                x = 0;
+                y++;
+            }
 		}
 		parser.parse(actions);
 		lines = y+1;
