@@ -38,6 +38,7 @@ On DOM ready, each element with a `data-ansi-src` attribute is replaced with a `
 
 
 ### TODO
+* Flesh out character encoding/sets some more
 * Configurable color palettes/iCE color support
-* More character sets
 * SAUCE support
+* Maybe write some actual tests, like an adult.
