@@ -1,9 +1,11 @@
-textmode.addCharacterSet({
-    name: 'cp437',
-    description: 'IBM PC CP437 9x16',
-    characterWidth: 9,
-    characterHeight: 16,
-    characters: [
+import characterSet from '../characterset.js';
+
+var cp437 = new characterSet(
+    'cp437',
+    'IBM PC Code Page 437 9x16',
+    9,
+    16,
+    [
         '000000000000000000000000000000000000',
         '00001F902A540A057A9940A04FC000000000',
         '00001F9FEDB7FBFD86E77FBFCFC000000000',
@@ -261,4 +263,6 @@ textmode.addCharacterSet({
         '0000000007E3F1F8FC7E3F1F800000000000',
         '000000000000000000000000000000000000'
     ]
-});
+);
+
+export default cp437;

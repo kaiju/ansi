@@ -1,3 +1,7 @@
+import ansi_parser from './ansi_parser.js';
+import textmode from './textmode.js';
+import cp437 from './charactersets/cp437.js';
+
 function get_ansi_from_url(url, charset, success, error) {
 
 	var request = new XMLHttpRequest();
@@ -54,6 +58,7 @@ function replace_element(element) {
 	var charset = (element.hasAttribute('data-ansi-charset')) ? element.getAttribute('data-ansi-charset') : 'ISO-8859-1';
 
 	get_ansi_from_url(url, charset, function(ansi_data) {
+
 		var canvas_element = ansi(ansi_data);
 
 		element.parentElement.insertBefore(canvas_element, element);
@@ -153,7 +158,6 @@ function ansi(data, options) {
 		}
 
 	function get_lines() {
-
 		var x = 0,
 			y = 0,
 			lines = 0;
@@ -184,7 +188,7 @@ function ansi(data, options) {
 		return lines;
 	}
 
-	var display = new textmode.display({ cols: columns, rows: lines });
+	var display = new textmode({ cols: columns, rows: lines, characterSet: cp437 });
 
     parser.parse({
         DRAW: function(code) {

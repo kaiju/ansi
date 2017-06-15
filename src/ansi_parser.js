@@ -5,7 +5,7 @@
  * Author: Josh <josh@kaiju.net>
  */
  
-function ansi_parser(data) {
+export default function ansi_parser(data) {
 
 	this.ACTIONS = {
 		'MODE_CHANGE': 109,
@@ -34,7 +34,7 @@ ansi_parser.prototype.parse = function parse(hooks) {
     for (var i=0;i<this.data.length;i++) {
 
         if (this.data[i] === 27 && this.data[(i+1)] === 91) {
-            args = '';
+            var args = '';
 
             for (var ci=(i+2);ci<this.data.length;ci++) {
                 i = ci;
