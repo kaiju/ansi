@@ -4,33 +4,34 @@
  *
  * Author: Josh <josh@kaiju.net>
  */
- 
-export default function ansi_parser(data) {
 
-	this.ACTIONS = {
-		'MODE_CHANGE': 109,
-		'MOVE_TO': [72,102],
-		'MOVE_UP': 65,
-		'MOVE_DOWN': 66,
-		'MOVE_RIGHT': 67,
-		'MOVE_LEFT': 68,
-		'REPORT_POSITION': 82,
-		'SAVE_POSITION': 115,
-		'LOAD_POSITION': 117,
-		'CLEAR_SCREEN': 2,
-		'CLEAR_LINE': 75
-	}
+export default class ansi_parser {
+  constructor(data) {
 
-	this.data = [];
-	if (typeof data === 'string') {
-	    for (var i=0;i<data.length;i++) this.data.push(data.charCodeAt(i));
-	} else if (typeof ansi_data === 'array') {
-	    this.data = data;
-	}
+    this.ACTIONS = {
+  		'MODE_CHANGE': 109,
+  		'MOVE_TO': [72,102],
+  		'MOVE_UP': 65,
+  		'MOVE_DOWN': 66,
+  		'MOVE_RIGHT': 67,
+  		'MOVE_LEFT': 68,
+  		'REPORT_POSITION': 82,
+  		'SAVE_POSITION': 115,
+  		'LOAD_POSITION': 117,
+  		'CLEAR_SCREEN': 2,
+  		'CLEAR_LINE': 75
+  	}
 
-}
+  	this.data = [];
+  	if (typeof data === 'string') {
+  	    for (var i=0;i<data.length;i++) this.data.push(data.charCodeAt(i));
+  	} else if (typeof ansi_data === 'array') {
+  	    this.data = data;
+  	}
 
-ansi_parser.prototype.parse = function parse(hooks) {
+  }
+
+  parse(hooks) {
     for (var i=0;i<this.data.length;i++) {
 
         if (this.data[i] === 27 && this.data[(i+1)] === 91) {
@@ -102,4 +103,7 @@ ansi_parser.prototype.parse = function parse(hooks) {
 
     }
     return this;
+
+  }
+
 }
