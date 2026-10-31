@@ -1,7 +1,7 @@
 {
   "name": "ANSI",
   "description": "Load ansi/ascii in your browser, displayed via HTML5 Canvas",
-  "author:": "Josh <josh@kaiju.net>",
+  "author": "Josh <josh@kaiju.net>",
   "repository": "kaiju/ansi",
   "version": "0.1.1",
   "scripts": {
@@ -9,5 +9,6 @@
   },
   "devDependencies": {
     "webpack": "^2.6.1"
-  }
+  },
+  "packageManager": "pnpm@12.9.0"
 }
