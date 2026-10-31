@@ -11,6 +11,7 @@
   "type": "module",
   "packageManager": "pnpm@12.9.0",
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vite-plugin-dts": "^5.1.2",
