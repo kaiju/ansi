@@ -5,10 +5,15 @@
   "repository": "kaiju/ansi",
   "version": "0.1.1",
   "scripts": {
-    "install": "./node_modules/.bin/webpack ./src/ansi.js ./dist/ansi.js"
+    "dev": "vite",
+    "build": "vite build"
   },
+  "type": "module",
+  "packageManager": "pnpm@12.9.0",
   "devDependencies": {
-    "webpack": "^2.6.1"
-  },
-  "packageManager": "pnpm@12.9.0"
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vite-plugin-dts": "^5.1.2",
+    "vitest": "^5.0.5"
+  }
 }
