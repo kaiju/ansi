@@ -273,5 +273,5 @@ function ansi(data) {
     },
   });
 
-  return display.canvas();
+  return display.canvas;
 }
