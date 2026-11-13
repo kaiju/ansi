@@ -1,8 +1,11 @@
 import ansi_parser from "./ansi_parser.js";
-import cp437 from "./charactersets/cp437.js";
+import font from "./font.js";
+import defaultFontUrl from "./fonts/ibm9x16.psf?url";
 import textmode from "./textmode.js";
 
-function get_ansi_from_url(url, charset, success) {
+
+// Fetch ANSI data from a URL and decode by a given character encoding
+function get_ansi_from_url(url, encoding, success) {
   fetch(url)
     .then((response) => {
       if (!response.ok) {
@@ -12,7 +15,7 @@ function get_ansi_from_url(url, charset, success) {
     })
     .then((buffer) => {
       if (typeof success === "function") {
-        success(new TextDecoder(charset).decode(buffer));
+        success(new TextDecoder(encoding).decode(buffer));
       }
     });
 }
@@ -41,12 +44,16 @@ function replace_all() {
 
 function replace_element(element) {
   const url = element.getAttribute("data-ansi-src");
-  const charset = element.hasAttribute("data-ansi-charset")
-    ? element.getAttribute("data-ansi-charset")
+  const encoding = element.hasAttribute("data-ansi-encoding")
+    ? element.getAttribute("data-ansi-encoding")
     : "ISO-8859-1";
+  const fontUrl = element.hasAttribute("data-ansi-font")
+    ? element.getAttribute("data-ansi-font")
+    : defaultFontUrl;
 
-  get_ansi_from_url(url, charset, (ansi_data) => {
-    const canvas_element = ansi(ansi_data);
+  // grab our ansi data
+  get_ansi_from_url(url, encoding, async (ansi_data) => {
+    const canvas_element = ansi(ansi_data, await font.load(fontUrl));
 
     element.parentElement.insertBefore(canvas_element, element);
     element.parentElement.removeChild(element);
@@ -66,7 +73,7 @@ function replace_element(element) {
 
 document.addEventListener("DOMContentLoaded", replace_all);
 
-function ansi(data) {
+function ansi(data, font) {
   let parser = new ansi_parser(data),
     palette = {
       BLACK: {
@@ -173,7 +180,7 @@ function ansi(data) {
   const display = new textmode({
     cols: columns,
     rows: lines,
-    characterSet: cp437,
+    font,
   });
 
   parser.parse({

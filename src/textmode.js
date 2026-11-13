@@ -42,7 +42,7 @@ export function hexString2RGBArray(hexString) {
  *
  * @param {int} options.cols Display width in rows. Default: 80
  * @param {int} options.rows Display height in rows. Default: 25
- * @param {string} options.characterSet
+ * @param {string} options.font
  */
 export default class textmode {
   constructor(options) {
@@ -50,7 +50,7 @@ export default class textmode {
     this.options = options === undefined ? {} : options;
     this._cols = options.cols === undefined ? 80 : options.cols;
     this._rows = options.rows === undefined ? 25 : options.rows;
-    this._characterSet = options.characterSet;
+    this._font = options.font;
 
     // cursor junk
     this._cursorX = 0;
@@ -61,8 +61,8 @@ export default class textmode {
     // set up canvas
     this._canvas = document.createElement("canvas");
     this._context = this._canvas.getContext("2d");
-    this._widthpx = this._cols * this._characterSet.characterWidth;
-    this._heightpx = this._rows * this._characterSet.characterHeight;
+    this._widthpx = this._cols * this._font.glyphWidth;
+    this._heightpx = this._rows * this._font.glyphHeight;
 
     this._canvas.setAttribute("width", this._widthpx);
     this._canvas.setAttribute("height", this._heightpx);
@@ -82,17 +82,17 @@ export default class textmode {
    * @return {object} textmode.display
    */
   draw(charcode) {
-    if (this._characterSet.characters[charcode] === undefined) return;
+    if (this._font.glyphs[charcode] === undefined) return;
 
     const cdata = this._context.createImageData(
-        this._characterSet.characterWidth,
-        this._characterSet.characterHeight,
+        this._font.glyphWidth,
+        this._font.glyphHeight,
       ),
-      character = this._characterSet.characters[charcode];
+      character = this._font.glyphs[charcode];
 
     for (let z = 0; z < character.length; z++) {
       const bit = (z + 1) * 4 - 4;
-      const color = character[z] === "1" ? this._fgColor : this._bgColor;
+      const color = character[z] ? this._fgColor : this._bgColor;
       cdata.data[bit] = color[0];
       cdata.data[bit + 1] = color[1];
       cdata.data[bit + 2] = color[2];
@@ -101,8 +101,8 @@ export default class textmode {
 
     this._context.putImageData(
       cdata,
-      this._cursorX * this._characterSet.characterWidth,
-      this._cursorY * this._characterSet.characterHeight,
+      this._cursorX * this._font.glyphWidth,
+      this._cursorY * this._font.glyphHeight,
     );
 
     return this;
