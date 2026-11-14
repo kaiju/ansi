@@ -3,13 +3,12 @@ const fontCache = new Map();
 /**
  * Represents a textmode font
  */
-export default class font {
-  /**
-   * @param {int} glyphWidth of each character in pixels
-   * @param {int} glyphHeight of each character in pixels
-   * @param {Uint8Array[]} glyphs Per-glyph pixel data, one 0/1 entry per pixel
-   */
-  constructor(glyphWidth, glyphHeight, glyphs) {
+export default class textmodeFont {
+  glyphWidth: number;
+  glyphHeight: number;
+  glyphs: Uint8Array[];
+
+  constructor(glyphWidth: number, glyphHeight: number, glyphs: Uint8Array[]) {
     this.glyphWidth = glyphWidth;
     this.glyphHeight = glyphHeight;
     this.glyphs = glyphs;
@@ -19,12 +18,8 @@ export default class font {
    * Parse a PSF2 (Linux console) font
    *
    * Glyphs are indexed by position in the font; any Unicode table is ignored.
-   *
-   * @param {ArrayBuffer} buffer
-   *
-   * @return {font}
    */
-  static fromPSF2(buffer) {
+  static fromPSF2(buffer: ArrayBuffer) {
     const bytes = new Uint8Array(buffer);
     if (bytes.length < 32) throw new Error("PSF2 data truncated");
 
@@ -61,23 +56,19 @@ export default class font {
       glyphs.push(glyph);
     }
 
-    return new font(width, height, glyphs);
+    return new textmodeFont(width, height, glyphs);
   }
 
   /**
    * Fetch and parse a PSF2 font
-   *
-   * @param {string} url
-   *
-   * @return {Promise<font>}
    */
-  static async load(url) {
+  static async load(url: string): Promise<textmodeFont> {
     if (!fontCache.has(url)) fontCache.set(url, (async () => {
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      return font.fromPSF2(await response.arrayBuffer());
+      return textmodeFont.fromPSF2(await response.arrayBuffer());
     })());
     return fontCache.get(url);
 

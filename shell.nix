@@ -5,5 +5,6 @@ pkgs.mkShell {
   packages = with pkgs; [
     nodejs
     pnpm
+    typescript
   ];
 }

@@ -1,40 +1,10 @@
-import ansi_parser from "./ansi_parser.js";
-import font from "./font.js";
+import ansi_parser from "./ansi_parser";
+import textmodeFont from "./textmode_font";
 import defaultFontUrl from "./fonts/ibm9x16.psf?url";
-import textmode from "./textmode.js";
-
-
-// Fetch ANSI data from a URL and decode by a given character encoding
-function get_ansi_from_url(url, encoding, success) {
-  fetch(url)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return response.arrayBuffer();
-    })
-    .then((buffer) => {
-      if (typeof success === "function") {
-        success(new TextDecoder(encoding).decode(buffer));
-      }
-    });
-}
+import textmode from "./textmode";
 
 function replace_all() {
-  let elements = [];
-
-  if ("querySelectorAll" in document) {
-    elements = document.querySelectorAll("[data-ansi-src]");
-  } else {
-    const document_elements = document.getElementsByTagName("*");
-
-    for (let i = 0; i < document_elements.length; i++) {
-      if (document_elements[i].hasAttribute("data-ansi-src")) {
-        elements.push(elements[i]);
-      }
-    }
-  }
-
+  let elements = document.querySelectorAll("[data-ansi-src]");
   for (let i = 0; i < elements.length; i++) {
     if (!elements[i].hasAttribute("data-ansi-processed")) {
       replace_element(elements[i]);
@@ -42,38 +12,38 @@ function replace_all() {
   }
 }
 
-function replace_element(element) {
+async function replace_element(element: Element) {
   const url = element.getAttribute("data-ansi-src");
-  const encoding = element.hasAttribute("data-ansi-encoding")
-    ? element.getAttribute("data-ansi-encoding")
-    : "ISO-8859-1";
   const fontUrl = element.hasAttribute("data-ansi-font")
     ? element.getAttribute("data-ansi-font")
     : defaultFontUrl;
 
   // grab our ansi data
-  get_ansi_from_url(url, encoding, async (ansi_data) => {
-    const canvas_element = ansi(ansi_data, await font.load(fontUrl));
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const data = await response.arrayBuffer();
 
-    element.parentElement.insertBefore(canvas_element, element);
-    element.parentElement.removeChild(element);
+  const canvas_element = ansi(data, await textmodeFont.load(fontUrl));
 
-    for (let i = 0; i < element.attributes.length; i++) {
-      const attrName = element.attributes[i].nodeName;
-      const attrValue = element.attributes[i].nodeValue;
+  element.parentElement.insertBefore(canvas_element, element);
+  element.parentElement.removeChild(element);
 
-      if (attrName !== "width" && attrName !== "height") {
-        canvas_element.setAttribute(attrName, attrValue);
-      }
+  for (let i = 0; i < element.attributes.length; i++) {
+    const attrName = element.attributes[i].nodeName;
+    const attrValue = element.attributes[i].nodeValue;
+
+    if (attrName !== "width" && attrName !== "height") {
+      canvas_element.setAttribute(attrName, attrValue);
     }
+  }
 
-    canvas_element.setAttribute("data-ansi-processed", "true");
-  });
+  canvas_element.setAttribute("data-ansi-processed", "true");
+
 }
 
 document.addEventListener("DOMContentLoaded", replace_all);
 
-function ansi(data, font) {
+function ansi(data: ArrayBuffer, font: textmodeFont) {
   let parser = new ansi_parser(data),
     palette = {
       BLACK: {
@@ -146,13 +116,14 @@ function ansi(data, font) {
       CONCEALED: false,
     };
 
+  // parse ansi data and count lines so we know how to size canvas
   function get_lines() {
     let x = 0,
       y = 0,
       lines = 0;
 
     const actions = {
-      DRAW: () => {
+      CHAR: (code) => {
         if (x >= columns) {
           x = 0;
           y++;
@@ -160,10 +131,10 @@ function ansi(data, font) {
           x++;
         }
       },
-      MOVE_RIGHT: (amount) => {
-        x += amount;
+      CUR_FORWARD: (n: number) => {
+        x += n;
       },
-      CARRIAGE_RETURN: () => {
+      NEWLINE: () => {
         x = 0;
         y++;
       },
@@ -177,14 +148,10 @@ function ansi(data, font) {
     return lines;
   }
 
-  const display = new textmode({
-    cols: columns,
-    rows: lines,
-    font,
-  });
+  const display = new textmode(font, columns, lines);
 
   parser.parse({
-    DRAW: (code) => {
+    CHAR: (code: number) => {
       display.move(cursor.x, cursor.y).draw(code);
 
       if (cursor.x < columns - 1) {
@@ -194,7 +161,7 @@ function ansi(data, font) {
         cursor.y++;
       }
     },
-    MODE_CHANGE: (...args) => {
+    CHAR_MODE: (...args) => {
       for (let i = 0; i < args.length; i++) {
         const param = args[i];
 
@@ -232,48 +199,31 @@ function ansi(data, font) {
         }
       }
     },
-    MOVE_TO: (...args) => {
-      const line = args[0] !== undefined ? args[0] : 0;
-      const column = args[1] !== undefined ? args[1] : 0;
-      cursor.x = column;
-      cursor.y = line;
+    CUR_POS: (row: number, col: number) => {
+      cursor.x = col;
+      cursor.y = row;
       display.move(cursor.x, cursor.y);
     },
-    MOVE_UP: (amount) => {
-      if (cursor.y - amount < 0) {
+    CUR_UP: (n: number) => {
+      if (cursor.y - n< 0) {
         cursor.y = 0;
       } else {
-        cursor.y -= amount;
+        cursor.y -= n;
       }
     },
-    MOVE_DOWN: () => {},
-    MOVE_RIGHT: (amount) => {
-      cursor.x += amount;
+    CUR_DOWN: (n: number) => {},
+    CUR_FORWARD: (n: number) => {
+      cursor.x += n;
       display.move(cursor.x, cursor.y);
     },
-    MOVE_LEFT: (amount) => {
-      if (cursor.x - amount < 0) {
+    CUR_BACK: (n: number) => {
+      if (cursor.x - n< 0) {
         cursor.x = 0;
       } else {
-        cursor.x -= amount;
+        cursor.x -= n;
       }
     },
-    CLEAR_SCREEN: () => {
-      cursor.x = 0;
-      cursor.y = 0;
-      display.move(cursor.x, cursor.y);
-    },
-    CLEAR_LINE: () => {},
-    SAVE_POSITION: () => {
-      savedcursor.x = cursor = x;
-      savedcursor.y = cursor = y;
-    },
-    LOAD_POSITION: () => {
-      cursor.x = that._savedcursor.x;
-      cursor.y = that._savedcursor.y;
-      display.move(cursor.x, that_cursor.y);
-    },
-    CARRIAGE_RETURN: () => {
+    NEWLINE: () => {
       cursor.x = 0;
       cursor.y++;
       display.move(cursor.x, cursor.y);
