@@ -12,11 +12,15 @@ const fonts = import.meta.glob('../src/fonts/*.psf', {
 
 const ansiSelect = document.getElementById('ansi-select');
 const fontSelect = document.getElementById('font-select');
+const urlForm = document.getElementById('url-form');
+const urlInput = document.getElementById('ansi-url');
 
-// ?file=yop-ANSilove.ans&font=ibm9x16.psf
+// ?file=yop-ANSilove.ans&font=ibm9x16.psf, or ?url=https://...&font=...
+// (url takes precedence over file)
 const params = new URLSearchParams(location.search);
 const initialFile = params.get('file') ?? 'yop-ANSilove.ans';
 const initialFont = params.get('font') ?? 'ibm9x16.psf';
+urlInput.value = params.get('url') ?? '';
 
 for (const file of files) {
 	const name = file.slice(1);
@@ -28,25 +32,39 @@ for (const [path, url] of Object.entries(fonts).sort()) {
 	fontSelect.add(new Option(name, url, false, name === initialFont));
 }
 
+// A non-empty URL box overrides the file dropdown
+function currentSrc() {
+	return urlInput.value || ansiSelect.value;
+}
+
 // Point the initial <img> at the selection; ansi.js renders it on DOMContentLoaded
 const initialImg = document.getElementById('ansi');
-initialImg.setAttribute('data-ansi-src', ansiSelect.value);
+initialImg.setAttribute('data-ansi-src', currentSrc());
 initialImg.setAttribute('data-ansi-font', fontSelect.value);
 
 function render() {
 	const img = document.createElement('img');
 	img.id = 'ansi';
-	img.setAttribute('data-ansi-src', ansiSelect.value);
+	img.setAttribute('data-ansi-src', currentSrc());
 	img.setAttribute('data-ansi-font', fontSelect.value);
 	document.getElementById('ansi').replaceWith(img);
 	document.dispatchEvent(new Event('DOMContentLoaded'));
 
-	const query = new URLSearchParams({
-		file: ansiSelect.selectedOptions[0].text,
-		font: fontSelect.selectedOptions[0].text,
-	});
+	const query = new URLSearchParams({ font: fontSelect.selectedOptions[0].text });
+	if (urlInput.value) {
+		query.set('url', urlInput.value);
+	} else {
+		query.set('file', ansiSelect.selectedOptions[0].text);
+	}
 	history.replaceState(null, '', `?${query}`);
 }
 
-ansiSelect.addEventListener('change', render);
+ansiSelect.addEventListener('change', () => {
+	urlInput.value = '';
+	render();
+});
 fontSelect.addEventListener('change', render);
+urlForm.addEventListener('submit', (event) => {
+	event.preventDefault(); // don't actually submit/reload the page
+	render();
+});

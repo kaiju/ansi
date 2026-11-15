@@ -249,6 +249,29 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
       cursor.y = savedcursor.y;
       display.move(cursor.x, cursor.y);
     },
+    EOF: (footer) => {
+      // read the last 128 bytes
+      if (footer.byteLength >= 128) {
+
+        let s = footer.subarray((footer.length - 128))
+        const decoder = new TextDecoder();
+
+        const header = decoder.decode(s.subarray(0, 5))
+        const version = decoder.decode(s.subarray(5, 7));
+        const title = decoder.decode(s.subarray(7, 42)).trimEnd();
+        const author = decoder.decode(s.subarray(42, 62)).trimEnd();
+        const group = decoder.decode(s.subarray(62, 82)).trimEnd();
+
+        const date = decoder.decode(s.subarray(82, 90));
+        const year = date.substring(0, 4);
+        const month = date.substring(4, 6);
+        const day = date.substring(6, 8);
+
+        display._canvas.role = "img";
+        display._canvas.title = `${title} by ${author} <${group}> on ${month}-${day}-${year}`;
+      }
+
+    },
   });
 
   return display.canvas;

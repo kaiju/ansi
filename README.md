@@ -1,8 +1,8 @@
 # ansi.js
 
-### Load ansi/ascii in your browser, displayed via HTML5 Canvas
+Display ansi/ascii art in the browser via HTML5 Canvas.
 
-A small project of mine from 2009 that has gradually turned into more modular and usable bits of code.
+An old project of mine from 2009. Now with some modern improvements like porting to typescript, improved parsing, sauce support, and more.
 
 ### Usage
 
@@ -24,5 +24,4 @@ On DOM ready, each element with a `data-ansi-src` attribute is replaced with a `
 * Web Components?
 * Baud rate emulation
 * Configurable color palettes/iCE color support
-* SAUCE support
 * Maybe write some actual tests, like an adult.

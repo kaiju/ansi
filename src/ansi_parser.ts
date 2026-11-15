@@ -23,7 +23,7 @@ const RCP: number = 117; // Restore cursor position
 export interface parserCallbacks {
   CHAR?(code: number): void;
   NEWLINE?(): void;
-  EOF?(): void;
+  EOF?(footer: Uint8Array<ArrayBuffer>): void;
 
   // CSI callbacks
   CUR_UP?(n: number): void;
@@ -109,7 +109,9 @@ export default class ansi_parser {
         fn.NEWLINE?.();
       } else if (this.data[i] === EOF) {
         // EOF
-        fn.EOF?.();
+        let footer = this.data.subarray(i+1);
+        fn.EOF?.(footer);
+        break;
       } else {
         // Default to Character drawing
         fn.CHAR?.(this.data[i]);
