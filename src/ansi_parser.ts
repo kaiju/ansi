@@ -41,11 +41,48 @@ export interface parserCallbacks {
 export default class ansi_parser {
   data: Uint8Array<ArrayBuffer>;
 
-  constructor(data: ArrayBuffer) {
+  columns: number;
+
+  // state
+  fgColor: number = 37;
+  bgColor: number = 40;
+  cursor = {
+    x: 0,
+    y: 0,
+  };
+  savedcursor = {
+    x: 0,
+    y: 0,
+  };
+  attributes = {
+    BOLD: false,
+    UNDERLINE: false,
+    REVERSE: false,
+  };
+
+  constructor(data: ArrayBuffer, columns: number = 80) {
     this.data = new Uint8Array(data);
+
+    if (columns) this.columns = columns;
+  }
+
+  defaults() {
+    this.fgColor = 37;
+    this.bgColor = 40;
+    this.cursor = {
+      x: 0,
+      y: 0,
+    };
+    this.savedcursor = { ...this.cursor };
+    this.attributes = {
+      BOLD: false,
+      UNDERLINE: false,
+      REVERSE: false,
+    };
   }
 
   parse(fn: parserCallbacks) {
+    this.defaults();
     for (let i = 0; i < this.data.length; i++) {
       // Iterate our bytes
 
@@ -61,37 +98,100 @@ export default class ansi_parser {
             // final byte
 
             switch (this.data[ci]) {
-              case CUU:
-                fn.CUR_UP?.(Number(args) || 1);
+              case CUU: {
+                const c = Number(args) || 1;
+                this.cursor.y = Math.max(0, this.cursor.y - c);
+                fn.CUR_UP?.(c);
                 break;
-              case CUD:
-                fn.CUR_DOWN?.(Number(args) || 1);
+              }
+              case CUD: {
+                const c = Number(args) || 1;
+                this.cursor.y += c;
+                fn.CUR_DOWN?.(c);
                 break;
-              case CUF:
-                fn.CUR_FORWARD?.(Number(args) || 1);
+              }
+              case CUF: {
+                const c = Number(args) || 1;
+                this.cursor.x = Math.min(this.columns - 1, this.cursor.x + c);
+                fn.CUR_FORWARD?.(c);
                 break;
-              case CUB:
-                fn.CUR_BACK?.(Number(args) || 1);
+              }
+              case CUB: {
+                const c = Number(args) || 1;
+                this.cursor.x = Math.max(0, this.cursor.x - c);
+                fn.CUR_BACK?.(c);
                 break;
+              }
               case CUP:
               case HVP: {
                 const [row, col] = args.split(";").map(Number);
+                this.cursor = { x: (col || 1) - 1, y: (row || 1) - 1 }; // these are 1 based and default to 1
                 fn.CUR_POS?.(row, col);
                 break;
               }
-              case SGR:
-                fn.CHAR_MODE?.(...args.split(";").map(Number));
+              case SGR: {
+                const params: number[] = args.split(";").map(Number);
+
+                for (let i = 0; i < params.length; i++) {
+                  const p = params[i];
+
+                  // colors
+                  if (p >= 30 && p <= 37) {
+                    this.fgColor = p;
+                    continue;
+                  }
+                  if (p >= 40 && p <= 47) {
+                    this.bgColor = p;
+                    continue;
+                  }
+
+                  switch (p) {
+                    case 0: // reset
+                      for (const attribute in this.attributes)
+                        this.attributes[attribute] = false;
+                      this.fgColor = 37;
+                      this.bgColor = 40;
+                      break;
+                    case 1:
+                      this.attributes.BOLD = true;
+                      break;
+                    case 4:
+                      this.attributes.UNDERLINE = true;
+                      break;
+                    case 7:
+                      this.attributes.REVERSE = true;
+                      break;
+                  }
+                }
+
+                fn.CHAR_MODE?.(...params);
                 break;
-              case ED:
-                fn.ERASE_DISPLAY?.(Number(args));
+              }
+              case ED: {
+                const n: number = Number(args);
+                switch (n) {
+                  case 0:
+                    break;
+                  case 1:
+                    break;
+                  case 2: // clear entire screen, reset cursor in ANSI.SYS
+                    this.cursor = { x: 0, y: 0 };
+                    break;
+                  case 3:
+                    break;
+                }
+                fn.ERASE_DISPLAY?.(n);
                 break;
+              }
               case EL:
                 fn.ERASE_LINE?.(Number(args));
                 break;
               case SCP:
+                this.savedcursor = { ...this.cursor };
                 fn.SAVE_CUR?.();
                 break;
               case RCP:
+                this.cursor = { ...this.savedcursor };
                 fn.RESTORE_CUR?.();
                 break;
             }
@@ -106,15 +206,25 @@ export default class ansi_parser {
         // TODO- figure out a more complete newline strategy
       } else if (this.data[i] === CR) {
         // Carriage Return
+        this.cursor.x = 0;
+        this.cursor.y++;
         fn.NEWLINE?.();
       } else if (this.data[i] === EOF) {
         // EOF
-        let footer = this.data.subarray(i + 1);
+        const footer = this.data.subarray(i + 1);
         fn.EOF?.(footer);
         break;
       } else {
-        // Default to Character drawing
+        // Character
         fn.CHAR?.(this.data[i]);
+
+        // Advance our cursor
+        if (this.cursor.x < this.columns - 1) {
+          this.cursor.x++;
+        } else {
+          this.cursor.x = 0;
+          this.cursor.y++;
+        }
       }
     }
     return this;

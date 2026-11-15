@@ -6,8 +6,8 @@
  * Author: Josh Mast <josh@mast.zone>
  */
 
-import textmodeFont from "./textmode_font";
 import defaultFontUrl from "./fonts/ibm9x16.psf?url";
+import textmodeFont from "./textmode_font";
 
 export default class textmodeDisplay extends HTMLElement {
   static observedAttributes: string[] = ["font", "cols", "rows", "label"];
@@ -25,8 +25,8 @@ export default class textmodeDisplay extends HTMLElement {
   cursorX: number = 0; // column position
   cursorY: number = 0; // row position
 
-  fgColor: number[] = [184, 184, 184];
-  bgColor: number[] = [0, 0, 0];
+  fgColor: number;
+  bgColor: number;
 
   constructor() {
     super();
@@ -38,13 +38,10 @@ export default class textmodeDisplay extends HTMLElement {
     this.canvas.width = this.imageData.width;
     this.canvas.height = this.imageData.height;
     this.canvas.tabIndex = 1;
-
     this.render();
-
-    this.shadowRoot!.replaceChildren(this.canvas);
+    this.shadowRoot?.replaceChildren(this.canvas);
   }
 
-  // re-render everything on change
   attributeChangedCallback(
     _name: string,
     oldValue: string | null,
@@ -52,8 +49,8 @@ export default class textmodeDisplay extends HTMLElement {
   ) {
     if (oldValue !== newValue && this.isConnected) this.init();
 
-    if (_name == "label") {
-      this.canvas.title = this.getAttribute("label");
+    if (_name === "label") {
+      this.canvas.title = newValue;
     }
   }
 
@@ -89,7 +86,8 @@ export default class textmodeDisplay extends HTMLElement {
   }
 
   clear() {
-    this.data.fill(this.pack(this.bgColor));
+    //this.data.fill(this.pack(this.bgColor));
+    this.data.fill((0xff000000 | this.bgColor) >>> 0);
     this.cursorX = 0;
     this.cursorY = 0;
   }
@@ -102,7 +100,9 @@ export default class textmodeDisplay extends HTMLElement {
       // determine if this is a foreground or background color based on bit
       const color = this.font.glyphs[c][bit] ? this.fgColor : this.bgColor;
 
-      const pixel = this.pack(color);
+      //const pixel = this.pack(color);
+      const pixel = (0xff000000 | color) >>> 0;
+      //console.log(pixel);
 
       // TODO- understand this math a little better
       // where are we column-wise within the glyph dimensions
