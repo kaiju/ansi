@@ -6,6 +6,7 @@
 
 const LF: number = 10; // Line Feed
 const CR: number = 13; // Carriage Return
+const EOF: number = 26; // DOS end of file
 
 const CUU: number = 65; // Cursor up
 const CUD: number = 66; // Cursor down
@@ -57,16 +58,16 @@ export default class ansi_parser {
 
             switch (this.data[ci]) {
               case CUU:
-                fn.CUR_UP?.(Number(args));
+                fn.CUR_UP?.(Number(args) || 1);
                 break;
               case CUD:
-                fn.CUR_DOWN?.(Number(args));
+                fn.CUR_DOWN?.(Number(args) || 1);
                 break;
               case CUF:
-                fn.CUR_FORWARD?.(Number(args));
+                fn.CUR_FORWARD?.(Number(args) || 1);
                 break;
               case CUB:
-                fn.CUR_BACK?.(Number(args));
+                fn.CUR_BACK?.(Number(args) || 1);
                 break;
               case CUP:
               case HVP: {
@@ -96,7 +97,7 @@ export default class ansi_parser {
       } else if (this.data[i] === CR) {
         // Carriage Return
         fn.NEWLINE?.();
-      } else if (this.data[i] === 25) {
+      } else if (this.data[i] === EOF) {
         // EOF
         fn.EOF?.();
       } else {

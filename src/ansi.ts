@@ -200,11 +200,13 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
       display.move(cursor.x, cursor.y);
     },
     CUR_UP: (n: number) => {
+      console.log(`cursor up: ${n}`)
       if (cursor.y - n < 0) {
         cursor.y = 0;
       } else {
         cursor.y -= n;
       }
+      display.move(cursor.x, cursor.y);
     },
     CUR_DOWN: (_n: number) => {},
     CUR_FORWARD: (n: number) => {
@@ -223,6 +225,19 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
       cursor.y++;
       display.move(cursor.x, cursor.y);
     },
+    ERASE_DISPLAY: (n: number) => {
+      // 0: clear from cursor to end of screen
+      // 1: clear from cursor to to beginning of screen
+      // 2: clear enter screen, move cursor upper left
+      switch (n) {
+        case 2:
+          cursor.x = 0;
+          cursor.y = 0;
+          display.move(cursor.x, cursor.y);
+          break;
+      }
+
+    }
   });
 
   return display.canvas;

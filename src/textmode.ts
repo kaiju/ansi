@@ -53,12 +53,20 @@ export default class textmode {
     this._canvas.width = canvasElementWidth;
     this._canvas.height = canvasElementHeight;
     this._canvas.tabIndex = 1;
-    this._context.fillStyle = "#000000";
-    this._context.fillRect(0, 0, canvasElementWidth, canvasElementHeight);
+    this.clear();
   }
 
   get canvas() {
     return this._canvas;
+  }
+
+  /**
+   * Clear display
+   */
+  clear(): textmode {
+    this._context.fillStyle = "#000000";
+    this._context.fillRect(0, 0, this._canvas.width, this._canvas.height);
+    return this;
   }
 
   /**
