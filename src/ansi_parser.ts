@@ -41,16 +41,19 @@ export default class ansi_parser {
   }
 
   parse(fn: parserCallbacks) {
+    for (let i = 0; i < this.data.length; i++) {
+      // Iterate our bytes
 
-    for (let i = 0; i < this.data.length; i++) { // Iterate our bytes
-
-      if (this.data[i] === 27 && this.data[i + 1] === 91) { // Start of Control Sequence
+      if (this.data[i] === 27 && this.data[i + 1] === 91) {
+        // Start of Control Sequence
 
         let args: string = "";
 
-        for (let ci = i + 2; ci < this.data.length; ci++) { // iterate over bytes until our final byte
-          i = ci
-          if (this.data[ci] >= 64 && this.data[ci] <= 126) { // final byte
+        for (let ci = i + 2; ci < this.data.length; ci++) {
+          // iterate over bytes until our final byte
+          i = ci;
+          if (this.data[ci] >= 64 && this.data[ci] <= 126) {
+            // final byte
 
             switch (this.data[ci]) {
               case CUU:
@@ -87,15 +90,18 @@ export default class ansi_parser {
             args += String.fromCharCode(this.data[ci]);
           }
         }
-
-      } else if (this.data[i] === LF) { // Line Feed
+      } else if (this.data[i] === LF) {
+        // Line Feed
         // TODO- figure out a more complete newline strategy
-      } else if (this.data[i] === CR) { // Carriage Return
+      } else if (this.data[i] === CR) {
+        // Carriage Return
         fn.NEWLINE?.();
-      } else if (this.data[i] === 25) { // EOF
+      } else if (this.data[i] === 25) {
+        // EOF
         fn.EOF?.();
-      } else { // Default to Character drawing
-        fn.CHAR?.(this.data[i])
+      } else {
+        // Default to Character drawing
+        fn.CHAR?.(this.data[i]);
       }
     }
     return this;

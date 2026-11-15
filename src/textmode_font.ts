@@ -63,14 +63,17 @@ export default class textmodeFont {
    * Fetch and parse a PSF2 font
    */
   static async load(url: string): Promise<textmodeFont> {
-    if (!fontCache.has(url)) fontCache.set(url, (async () => {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return textmodeFont.fromPSF2(await response.arrayBuffer());
-    })());
+    if (!fontCache.has(url))
+      fontCache.set(
+        url,
+        (async () => {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return textmodeFont.fromPSF2(await response.arrayBuffer());
+        })(),
+      );
     return fontCache.get(url);
-
   }
 }

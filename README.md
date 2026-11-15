@@ -21,6 +21,8 @@ Load an ANSI file using any element with a `data-ansi-src` attribute:
 On DOM ready, each element with a `data-ansi-src` attribute is replaced with a `canvas` element. Additional attributes (aside from `width` and `height`) are copied onto the new `canvas` element as well.
 
 ### TODO
+* Web Components?
+* Baud rate emulation
 * Configurable color palettes/iCE color support
 * SAUCE support
 * Maybe write some actual tests, like an adult.

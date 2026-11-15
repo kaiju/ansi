@@ -6,7 +6,7 @@
  * Author: Josh Mast <josh@mast.zone>
  */
 
-import textmodeFont from "./textmode_font";
+import type textmodeFont from "./textmode_font";
 
 /**
  * Creates and returns a new textmode display
@@ -57,7 +57,9 @@ export default class textmode {
     this._context.fillRect(0, 0, canvasElementWidth, canvasElementHeight);
   }
 
-  get canvas() { return this._canvas; };
+  get canvas() {
+    return this._canvas;
+  }
 
   /**
    * Draw a character at the cursor position in the display

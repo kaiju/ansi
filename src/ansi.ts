@@ -1,10 +1,10 @@
 import ansi_parser from "./ansi_parser";
-import textmodeFont from "./textmode_font";
 import defaultFontUrl from "./fonts/ibm9x16.psf?url";
 import textmode from "./textmode";
+import textmodeFont from "./textmode_font";
 
 function replace_all() {
-  let elements = document.querySelectorAll("[data-ansi-src]");
+  const elements = document.querySelectorAll("[data-ansi-src]");
   for (let i = 0; i < elements.length; i++) {
     if (!elements[i].hasAttribute("data-ansi-processed")) {
       replace_element(elements[i]);
@@ -38,7 +38,6 @@ async function replace_element(element: Element) {
   }
 
   canvas_element.setAttribute("data-ansi-processed", "true");
-
 }
 
 document.addEventListener("DOMContentLoaded", replace_all);
@@ -101,10 +100,6 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
       x: 0,
       y: 0,
     },
-    savedcursor = {
-      x: 0,
-      y: 0,
-    },
     columns = 80,
     lines = get_lines(),
     fg = palette.WHITE,
@@ -123,7 +118,7 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
       lines = 0;
 
     const actions = {
-      CHAR: (code) => {
+      CHAR: (_code: number) => {
         if (x >= columns) {
           x = 0;
           y++;
@@ -205,19 +200,19 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
       display.move(cursor.x, cursor.y);
     },
     CUR_UP: (n: number) => {
-      if (cursor.y - n< 0) {
+      if (cursor.y - n < 0) {
         cursor.y = 0;
       } else {
         cursor.y -= n;
       }
     },
-    CUR_DOWN: (n: number) => {},
+    CUR_DOWN: (_n: number) => {},
     CUR_FORWARD: (n: number) => {
       cursor.x += n;
       display.move(cursor.x, cursor.y);
     },
     CUR_BACK: (n: number) => {
-      if (cursor.x - n< 0) {
+      if (cursor.x - n < 0) {
         cursor.x = 0;
       } else {
         cursor.x -= n;
