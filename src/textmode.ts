@@ -6,149 +6,129 @@
  * Author: Josh Mast <josh@mast.zone>
  */
 
-import type textmodeFont from "./textmode_font";
+import textmodeFont from "./textmode_font";
+import defaultFontUrl from "./fonts/ibm9x16.psf?url";
 
-/**
- * Creates and returns a new textmode display
- */
-export default class textmode {
-  /** Textmode font */
-  _font: textmodeFont;
-  /** Width in columns */
-  _cols: number;
-  /** Height in rows */
-  _rows: number;
-  /** Cursor X state */
-  _cursorX: number;
-  /** Cursor Y state */
-  _cursorY: number;
-  /** Foreground color state */
-  _fgColor: number[];
-  /** Background color state */
-  _bgColor: number[];
+export default class textmodeDisplay extends HTMLElement {
+  static observedAttributes: string[] = ["font", "cols", "rows", "label"];
 
-  _canvas: HTMLCanvasElement;
-  _context: CanvasRenderingContext2D;
+  private canvas: HTMLCanvasElement = document.createElement("canvas");
+  private context: CanvasRenderingContext2D = this.canvas.getContext("2d");
 
-  constructor(font: textmodeFont, cols: number = 80, rows: number = 25) {
-    // constructor options
-    this._cols = cols;
-    this._rows = rows;
-    this._font = font;
+  private imageData: ImageData;
+  private data: Uint32Array;
 
-    // cursor state
-    this._cursorX = 0;
-    this._cursorY = 0;
+  private font: textmodeFont;
+  private cols: number;
+  private rows: number;
 
-    // color state
-    this._fgColor = [184, 184, 184];
-    this._bgColor = [0, 0, 0];
+  cursorX: number = 0; // column position
+  cursorY: number = 0; // row position
 
-    // set up canvas
-    this._canvas = document.createElement("canvas");
-    this._context = this._canvas.getContext("2d");
-    const canvasElementWidth: number = this._cols * this._font.glyphWidth;
-    const canvasElementHeight: number = this._rows * this._font.glyphHeight;
+  fgColor: number[] = [184, 184, 184];
+  bgColor: number[] = [0, 0, 0];
 
-    this._canvas.width = canvasElementWidth;
-    this._canvas.height = canvasElementHeight;
-    this._canvas.tabIndex = 1;
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" }).appendChild(this.canvas);
+  }
+
+  // connect to dom
+  connectedCallback() {
+    this.canvas.width = this.imageData.width;
+    this.canvas.height = this.imageData.height;
+    this.canvas.tabIndex = 1;
+
+    this.render();
+
+    this.shadowRoot!.replaceChildren(this.canvas);
+  }
+
+  // re-render everything on change
+  attributeChangedCallback(
+    _name: string,
+    oldValue: string | null,
+    newValue: string | null,
+  ) {
+    if (oldValue !== newValue && this.isConnected) this.init();
+
+    if (_name == "label") {
+      this.canvas.title = this.getAttribute("label");
+    }
+  }
+
+  async init() {
+    // load our font
+    const fontUrl = this.getAttribute("font") ?? defaultFontUrl;
+    this.font = await textmodeFont.load(fontUrl);
+
+    // Get our column/rows
+    this.cols = this.hasAttribute("cols")
+      ? Number(this.getAttribute("cols"))
+      : 80;
+    this.rows = this.hasAttribute("rows")
+      ? Number(this.getAttribute("rows"))
+      : 25;
+
+    // Get our pixel width/height
+    const pixelWidth: number = this.cols * this.font.glyphWidth;
+    const pixelHeight: number = this.rows * this.font.glyphHeight;
+
+    // Create a image data buffer for our entire canvas
+    this.imageData = new ImageData(pixelWidth, pixelHeight);
+    this.data = new Uint32Array(this.imageData.data.buffer);
+
     this.clear();
   }
 
-  get canvas() {
-    return this._canvas;
+  // turns our rgb arrays into a 32 bit hex value we can easily smash into a Uint32Array
+  // stop calling this on every draw and just precompute the pallete when we move
+  // those into textmode
+  private pack([r, g, b]: number[]) {
+    return (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
   }
 
-  /**
-   * Clear display
-   */
-  clear(): textmode {
-    this._context.fillStyle = "#000000";
-    this._context.fillRect(0, 0, this._canvas.width, this._canvas.height);
-    return this;
+  clear() {
+    this.data.fill(this.pack(this.bgColor));
+    this.cursorX = 0;
+    this.cursorY = 0;
   }
 
-  /**
-   * Draw a character at the cursor position in the display
-   *
-   * @param charcode Character code to draw
-   * @return textmode
-   */
-  draw(charcode: number): textmode {
-    if (this._font.glyphs[charcode] === undefined) return;
+  draw(c: number) {
+    if (this.font.glyphs[c] === undefined) return;
 
-    const cdata = this._context.createImageData(
-        this._font.glyphWidth,
-        this._font.glyphHeight,
-      ),
-      character = this._font.glyphs[charcode];
+    // walk each bit in the glyph bitmap and turn it into a rgba pixel array
+    for (let bit = 0; bit < this.font.glyphs[c].length; bit++) {
+      // determine if this is a foreground or background color based on bit
+      const color = this.font.glyphs[c][bit] ? this.fgColor : this.bgColor;
 
-    for (let z = 0; z < character.length; z++) {
-      const bit = (z + 1) * 4 - 4;
-      const color = character[z] ? this._fgColor : this._bgColor;
-      cdata.data[bit] = color[0];
-      cdata.data[bit + 1] = color[1];
-      cdata.data[bit + 2] = color[2];
-      cdata.data[bit + 3] = 255; // alpha support in the future?
+      const pixel = this.pack(color);
+
+      // TODO- understand this math a little better
+      // where are we column-wise within the glyph dimensions
+      const pcol =
+        this.cursorX * this.font.glyphWidth + (bit % this.font.glyphWidth);
+      // where are we row-wise within the glyph dimensions
+      const prow =
+        this.cursorY * this.font.glyphHeight +
+        Math.floor(bit / this.font.glyphWidth);
+
+      // translate glyph pixel dimension to our canvas buffer
+      const pos = prow * this.imageData.width + pcol;
+      this.data[pos] = pixel;
     }
 
-    this._context.putImageData(
-      cdata,
-      this._cursorX * this._font.glyphWidth,
-      this._cursorY * this._font.glyphHeight,
-    );
-
     return this;
   }
 
-  /**
-   * Move the cursor to a position in the display
-   *
-   * @param {int} col Column to move to
-   * @param {int} row Row to move to
-   */
-  move(col: number, row: number): textmode {
-    this._cursorX = col;
-    this._cursorY = row;
+  move(x: number, y: number) {
+    this.cursorX = x;
+    this.cursorY = y;
     return this;
   }
 
-  /**
-   * Move the cursor to a column
-   * @param col Column to move to
-   */
-  col(col: number): textmode {
-    this._cursorX = col;
-    return this;
-  }
-
-  /**
-   * Move the cursor to a row
-   * @param row Row to move to
-   */
-  row(row: number): textmode {
-    this._cursorY = row;
-    return this;
-  }
-
-  /**
-   * Set the foreground color by array of RGB values
-   *
-   * @param RGBArray Array of RGB values
-   */
-  foreColor(RGBArray: number[]): textmode {
-    this._fgColor = RGBArray;
-    return this;
-  }
-
-  /**
-   * Set the background color by array of RGB values
-   *
-   * @param RGBArray Array of RGB values
-   */
-  backColor(RGBArray: number[]): textmode {
-    this._bgColor = RGBArray;
-    return this;
+  render() {
+    this.context.putImageData(this.imageData, 0, 0);
   }
 }
+window.customElements.define("textmode-display", textmodeDisplay);

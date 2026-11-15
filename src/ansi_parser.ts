@@ -39,7 +39,7 @@ export interface parserCallbacks {
 }
 
 export default class ansi_parser {
-  data: Uint8Array;
+  data: Uint8Array<ArrayBuffer>;
 
   constructor(data: ArrayBuffer) {
     this.data = new Uint8Array(data);
@@ -109,7 +109,7 @@ export default class ansi_parser {
         fn.NEWLINE?.();
       } else if (this.data[i] === EOF) {
         // EOF
-        let footer = this.data.subarray(i+1);
+        let footer = this.data.subarray(i + 1);
         fn.EOF?.(footer);
         break;
       } else {

@@ -1,48 +1,117 @@
 import ansi_parser from "./ansi_parser";
 import defaultFontUrl from "./fonts/ibm9x16.psf?url";
-import textmode from "./textmode";
+import textmodeDisplay from "./textmode";
 import textmodeFont from "./textmode_font";
 
-function replace_all() {
-  const elements = document.querySelectorAll("[data-ansi-src]");
-  for (let i = 0; i < elements.length; i++) {
-    if (!elements[i].hasAttribute("data-ansi-processed")) {
-      replace_element(elements[i]);
-    }
-  }
-}
+class Ansi extends HTMLElement {
+  private tm: textmodeDisplay;
+  private parser: ansi_parser;
 
-async function replace_element(element: Element) {
-  const url = element.getAttribute("data-ansi-src");
-  const fontUrl = element.hasAttribute("data-ansi-font")
-    ? element.getAttribute("data-ansi-font")
-    : defaultFontUrl;
-
-  // grab our ansi data
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const data = await response.arrayBuffer();
-
-  const canvas_element = ansi(data, await textmodeFont.load(fontUrl));
-
-  element.parentElement.insertBefore(canvas_element, element);
-  element.parentElement.removeChild(element);
-
-  for (let i = 0; i < element.attributes.length; i++) {
-    const attrName = element.attributes[i].nodeName;
-    const attrValue = element.attributes[i].nodeValue;
-
-    if (attrName !== "width" && attrName !== "height") {
-      canvas_element.setAttribute(attrName, attrValue);
-    }
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
   }
 
-  canvas_element.setAttribute("data-ansi-processed", "true");
+  async connectedCallback() {
+    this.load();
+  }
+
+  private async load() {
+    // get src
+    if (!this.hasAttribute("src")) {
+      throw new Error("Missing src attribute");
+    }
+    const url = this.getAttribute("src");
+
+    // get optional font
+    const fontUrl: string = this.getAttribute("font") ?? defaultFontUrl;
+
+    // get optional column
+    const columns: number = this.hasAttribute("cols")
+      ? Number(this.getAttribute("cols"))
+      : 80;
+
+    // grab our ansi data
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.arrayBuffer();
+
+    // Set up our parser
+    this.parser = new ansi_parser(data);
+
+    // Run through the parser to count rows based on our column size.
+    // TODO make 'display' a pluggable interface and just share parsing logic across
+    // both passes
+    const rows: number = (() => {
+      const cursor = { x: 0, y: 0 };
+      const savedcursor = { x: 0, y: 0 };
+      let maxY = 0;
+      this.parser.parse({
+        CHAR: (_code: number) => {
+          maxY = Math.max(maxY, cursor.y);
+
+          if (cursor.x < columns - 1) {
+            cursor.x++;
+          } else {
+            cursor.x = 0;
+            cursor.y++;
+          }
+        },
+        CUR_POS: (row: number, col: number) => {
+          cursor.x = col;
+          cursor.y = row;
+        },
+        CUR_UP: (n: number) => {
+          cursor.y = Math.max(0, cursor.y - n);
+        },
+        CUR_DOWN: (_n: number) => {},
+        CUR_FORWARD: (n: number) => {
+          cursor.x += n;
+        },
+        CUR_BACK: (n: number) => {
+          cursor.x = Math.max(0, cursor.x - n);
+        },
+        NEWLINE: () => {
+          cursor.x = 0;
+          cursor.y++;
+        },
+        ERASE_DISPLAY: (n: number) => {
+          if (n === 2) {
+            cursor.x = 0;
+            cursor.y = 0;
+          }
+        },
+        SAVE_CUR: () => {
+          savedcursor.x = cursor.x;
+          savedcursor.y = cursor.y;
+        },
+        RESTORE_CUR: () => {
+          cursor.x = savedcursor.x;
+          cursor.y = savedcursor.y;
+        },
+      });
+      return maxY + 1;
+    })();
+
+    // Set up our textmode display
+    this.tm = new textmodeDisplay();
+    this.tm.setAttribute("font", fontUrl);
+    this.tm.setAttribute("cols", columns.toString());
+    this.tm.setAttribute("rows", rows.toString());
+    await this.tm.init();
+
+    // Yoink rendering off to our legacy draw function
+    await ansi(data, this.tm);
+
+    // render our drawing
+    this.tm.render();
+
+    this.shadowRoot!.replaceChildren(this.tm);
+  }
 }
+window.customElements.define("ansi-file", Ansi);
 
-document.addEventListener("DOMContentLoaded", replace_all);
-
-function ansi(data: ArrayBuffer, font: textmodeFont) {
+async function ansi(data: ArrayBuffer, display: textmodeDisplay) {
   let parser = new ansi_parser(data),
     palette = {
       BLACK: {
@@ -104,8 +173,6 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
       x: 0,
       y: 0,
     },
-    columns = 80,
-    lines = get_lines(),
     fg = palette.WHITE,
     bg = palette.BLACK,
     attributes = {
@@ -115,45 +182,11 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
       CONCEALED: false,
     };
 
-  // parse ansi data and count lines so we know how to size canvas
-  function get_lines() {
-    let x = 0,
-      y = 0,
-      lines = 0;
-
-    const actions = {
-      CHAR: (_code: number) => {
-        if (x >= columns) {
-          x = 0;
-          y++;
-        } else {
-          x++;
-        }
-      },
-      CUR_FORWARD: (n: number) => {
-        x += n;
-      },
-      NEWLINE: () => {
-        x = 0;
-        y++;
-      },
-      EOF: () => {
-        x = 0;
-        y++;
-      },
-    };
-    parser.parse(actions);
-    lines = y + 1;
-    return lines;
-  }
-
-  const display = new textmode(font, columns, lines);
-
   parser.parse({
     CHAR: (code: number) => {
       display.move(cursor.x, cursor.y).draw(code);
 
-      if (cursor.x < columns - 1) {
+      if (cursor.x < Number(display.getAttribute("cols")) - 1) {
         cursor.x++;
       } else {
         cursor.x = 0;
@@ -169,12 +202,12 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
           for (const attribute in attributes) attributes[attribute] = false;
           fg = palette.WHITE;
           bg = palette.BLACK;
-          display.foreColor(fg.NORMAL);
-          display.backColor(bg.NORMAL);
+          display.fgColor = fg.NORMAL;
+          display.bgColor = bg.NORMAL;
         } else if (param === 1) {
           // bold
           attributes.BOLD = true;
-          display.foreColor(fg.BOLD);
+          display.fgColor = fg.BOLD;
         } else if (param === 4) {
           // underscore
         } else if (param === 5) {
@@ -188,10 +221,10 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
           if (param >= 30 && param <= 37) {
             // foreground
             fg = colors[param];
-            display.foreColor(fg[attributes.BOLD ? "BOLD" : "NORMAL"]);
+            display.fgColor = fg[attributes.BOLD ? "BOLD" : "NORMAL"];
           } else if (param >= 40 && param <= 47) {
             bg = colors[param];
-            display.backColor(bg.NORMAL);
+            display.bgColor = bg.NORMAL;
           }
         } else {
           // caught unexpected parameter
@@ -250,13 +283,13 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
       display.move(cursor.x, cursor.y);
     },
     EOF: (footer) => {
+      // quick and nasty SAUCE parsing
       // read the last 128 bytes
       if (footer.byteLength >= 128) {
-
-        let s = footer.subarray((footer.length - 128))
+        let s = footer.subarray(footer.length - 128);
         const decoder = new TextDecoder();
 
-        const header = decoder.decode(s.subarray(0, 5))
+        const header = decoder.decode(s.subarray(0, 5));
         const version = decoder.decode(s.subarray(5, 7));
         const title = decoder.decode(s.subarray(7, 42)).trimEnd();
         const author = decoder.decode(s.subarray(42, 62)).trimEnd();
@@ -267,12 +300,11 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
         const month = date.substring(4, 6);
         const day = date.substring(6, 8);
 
-        display._canvas.role = "img";
-        display._canvas.title = `${title} by ${author} <${group}> on ${month}-${day}-${year}`;
+        const label = `${title} by ${author} <${group}> on ${month}-${day}-${year}`;
+        display.setAttribute("label", label);
+        // TODO put this in the actual ansi element innerText
+        display.innerText = label;
       }
-
     },
   });
-
-  return display.canvas;
 }

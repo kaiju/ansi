@@ -2,26 +2,27 @@
 
 Display ansi/ascii art in the browser via HTML5 Canvas.
 
-An old project of mine from 2009. Now with some modern improvements like porting to typescript, improved parsing, sauce support, and more.
+An old project of mine from 2009 that I've been slowly refactoring to get up to speed on modern (post-2015) javascript and web technologies.
 
 ### Usage
 
-Load an ANSI file using any element with a `data-ansi-src` attribute:
+Use the `<ansi-file>` custom element:
 
 ```
-<img data-ansi-src="my_ansi.ans">
+<ansi-file src="my-ansi.ans" font="ibm9x16.psf"></ansi-file>
 ```
 
 #### Attributes
 
-`data-ansi-src`: URL of the ANSI file to display
+`src`: URL of the ANSI file to render
 
-`data-ansi-charset`: Character encoding of the ANSI file, default is ISO-8859-1
+`font`: URL of a PSF2 (linux console) format font
 
-On DOM ready, each element with a `data-ansi-src` attribute is replaced with a `canvas` element. Additional attributes (aside from `width` and `height`) are copied onto the new `canvas` element as well.
+`cols`: Column width to render by, defaults to `80`
 
 ### TODO
-* Web Components?
-* Baud rate emulation
-* Configurable color palettes/iCE color support
-* Maybe write some actual tests, like an adult.
+
+- Baud rate emulation
+- Configurable color palettes/iCE color support
+- Maybe write some actual tests, like an adult.
+- Blink support
