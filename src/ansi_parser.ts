@@ -17,6 +17,8 @@ const SGR: number = 109; // Select Graphic Rendition (i.e. mode change)
 const ED: number = 93; // Erase in display
 const EL: number = 75; // Erase line
 const HVP: number = 102; // Horizontal vertical position
+const SCP: number = 115; // Save cursor position
+const RCP: number = 117; // Restore cursor position
 
 export interface parserCallbacks {
   CHAR?(code: number): void;
@@ -32,6 +34,8 @@ export interface parserCallbacks {
   CHAR_MODE?(...params: number[]): void;
   ERASE_DISPLAY?(n: number): void;
   ERASE_LINE?(n: number): void;
+  SAVE_CUR?(): void;
+  RESTORE_CUR?(): void;
 }
 
 export default class ansi_parser {
@@ -83,6 +87,12 @@ export default class ansi_parser {
                 break;
               case EL:
                 fn.ERASE_LINE?.(Number(args));
+                break;
+              case SCP:
+                fn.SAVE_CUR?.();
+                break;
+              case RCP:
+                fn.RESTORE_CUR?.();
                 break;
             }
             break;

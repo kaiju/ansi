@@ -100,6 +100,10 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
       x: 0,
       y: 0,
     },
+    savedcursor = {
+      x: 0,
+      y: 0,
+    },
     columns = 80,
     lines = get_lines(),
     fg = palette.WHITE,
@@ -200,7 +204,6 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
       display.move(cursor.x, cursor.y);
     },
     CUR_UP: (n: number) => {
-      console.log(`cursor up: ${n}`)
       if (cursor.y - n < 0) {
         cursor.y = 0;
       } else {
@@ -236,8 +239,16 @@ function ansi(data: ArrayBuffer, font: textmodeFont) {
           display.move(cursor.x, cursor.y);
           break;
       }
-
-    }
+    },
+    SAVE_CUR: () => {
+      savedcursor.x = cursor.x;
+      savedcursor.y = cursor.y;
+    },
+    RESTORE_CUR: () => {
+      cursor.x = savedcursor.x;
+      cursor.y = savedcursor.y;
+      display.move(cursor.x, cursor.y);
+    },
   });
 
   return display.canvas;
