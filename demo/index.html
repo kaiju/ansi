@@ -1,14 +1,66 @@
 <style>
-	body { background: #555; color: #b8b8b8; }
+	:root { color-scheme: dark; }
+	body {
+		margin: 0;
+		background: #000;
+		color: #b8b8b8;
+		font-family: sans-serif;
+		display: grid;
+		grid-template-columns: 1fr 200px;
+		grid-template-rows: auto 1fr;
+		height: 100vh;
+	}
+	#url-form {
+		grid-column: 1 / -1;
+		display: flex;
+		gap: 8px;
+		padding: 8px;
+		border-bottom: 1px solid #333;
+	}
+	#ansi-url { flex: 1; }
+	main { overflow: auto; padding: 8px; display: flex; }
+	/* margin: auto centers it, but still lets you scroll to the edges when it's bigger than the area */
+	#ansi { margin: auto; }
+	aside {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 8px;
+		border-left: 1px solid #333;
+	}
+	aside select { margin-bottom: 8px; }
+	input, select, button {
+		background: #1a1a1a;
+		color: #b8b8b8;
+		border: 1px solid #444;
+		border-radius: 3px;
+		padding: 4px 6px;
+		font: inherit;
+	}
+	input:focus, select:focus, button:focus {
+		outline: none;
+		border-color: #888;
+	}
+	button { cursor: pointer; }
+	button:hover { background: #2a2a2a; }
 </style>
-Ansi <select id="ansi-select"></select>
-Font <select id="font-select"></select>
-<form id="url-form" style="display: inline">
-	URL <input type="url" id="ansi-url" size="50" placeholder="https://example.com/art.ans">
+
+<form id="url-form">
+	<input type="url" id="ansi-url" placeholder="https://example.com/art.ans">
 	<button type="submit">Load</button>
 </form>
-<br>
-<div id="ansi"></div>
 
+<main>
+	<div id="ansi"></div>
+</main>
+
+<aside>
+	<label for="ansi-select">File</label>
+	<select id="ansi-select"></select>
+	<label for="font-select">Font</label>
+	<select id="font-select"></select>
+	<label for="baud-select">Baud Rate</label>
+	<select id="baud-select"></select>
+</aside>
 
 <script type="module" src="demo.js"></script>

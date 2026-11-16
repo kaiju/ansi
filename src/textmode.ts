@@ -124,6 +124,7 @@ export default class textmodeDisplay extends HTMLElement {
     return this;
   }
 
+  // TODO implement dirty rectangles
   render() {
     this.context.putImageData(this.imageData, 0, 0, 0, 0, this.imageData.width, this.imageData.height);
   }

@@ -31,6 +31,9 @@ class Ansi extends HTMLElement {
       ? Number(this.getAttribute("cols"))
       : 80;
 
+    // Baud rate
+    const baud: number = Number(this.getAttribute("baud"));
+
     // grab our ansi data
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -42,15 +45,8 @@ class Ansi extends HTMLElement {
     const palette = palettes.get("original");
 
     // Run through the parser to count rows based on our column size.
-    const rows: number = (() => {
-      let maxY = 0;
-      this.parser.parse({
-        CHAR: (_code: number) => {
-          maxY = Math.max(maxY, this.parser.cursor.y);
-        },
-      });
-      return maxY + 1;
-    })();
+    for (const _ of this.parser.parse({})) { };
+    const rows: number = this.parser.cursor.y;
 
     // Set up our textmode display
     this.display = new textmodeDisplay();
@@ -59,8 +55,10 @@ class Ansi extends HTMLElement {
     this.display.setAttribute("rows", rows.toString());
     await this.display.init();
 
+    this.shadowRoot?.replaceChildren(this.display);
+
     // render time
-    this.parser.parse({
+    const b = this.parser.parse({
       CHAR: (code: number) => {
         this.display
           .move(this.parser.cursor.x, this.parser.cursor.y)
@@ -102,7 +100,31 @@ class Ansi extends HTMLElement {
       },
     });
 
-    this.shadowRoot?.replaceChildren(this.display);
+    let start: number;
+    let bytesRead: number = 0;
+    const tick = (timestamp: number) => {
+      if (start === undefined) start = timestamp;
+
+      // How much time has elapsed since we started?
+      const elapsed = timestamp - start;
+      // How many bytes should we read based on baud rate and time elapsed?
+      const bytesToRead =
+        baud !== 0 ? (elapsed / 1000) * (baud / 10)  : data.byteLength;
+
+      // Go ahead and parse those bytes
+      while (bytesRead < bytesToRead) {
+        const bytes = b.next();
+        bytesRead = bytes.value;
+      }
+
+      // Render
+      this.display.render();
+
+      // If we haven't read everything, onto the next frame
+      if (bytesRead < data.byteLength) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }
+
 }
 window.customElements.define("ansi-file", Ansi);

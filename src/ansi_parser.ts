@@ -81,7 +81,7 @@ export default class ansi_parser {
     };
   }
 
-  parse(fn: parserCallbacks) {
+  *parse(fn: parserCallbacks) {
     this.defaults();
     for (let i = 0; i < this.data.length; i++) {
       // Iterate our bytes
@@ -226,7 +226,8 @@ export default class ansi_parser {
           this.cursor.y++;
         }
       }
+      yield i+1;
     }
-    return this;
+    return this.data.byteLength;
   }
 }
