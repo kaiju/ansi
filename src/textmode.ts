@@ -86,7 +86,6 @@ export default class textmodeDisplay extends HTMLElement {
   }
 
   clear() {
-    //this.data.fill(this.pack(this.bgColor));
     this.data.fill((0xff000000 | this.bgColor) >>> 0);
     this.cursorX = 0;
     this.cursorY = 0;
@@ -100,9 +99,7 @@ export default class textmodeDisplay extends HTMLElement {
       // determine if this is a foreground or background color based on bit
       const color = this.font.glyphs[c][bit] ? this.fgColor : this.bgColor;
 
-      //const pixel = this.pack(color);
       const pixel = (0xff000000 | color) >>> 0;
-      //console.log(pixel);
 
       // TODO- understand this math a little better
       // where are we column-wise within the glyph dimensions
@@ -128,7 +125,7 @@ export default class textmodeDisplay extends HTMLElement {
   }
 
   render() {
-    this.context.putImageData(this.imageData, 0, 0);
+    this.context.putImageData(this.imageData, 0, 0, 0, 0, this.imageData.width, this.imageData.height);
   }
 }
 window.customElements.define("textmode-display", textmodeDisplay);
