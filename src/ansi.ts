@@ -66,21 +66,6 @@ class Ansi extends HTMLElement {
           .move(this.parser.cursor.x, this.parser.cursor.y)
           .draw(code);
       },
-      CUR_POS: (_row: number, _col: number) => {
-        this.display.move(this.parser.cursor.x, this.parser.cursor.y);
-      },
-      CUR_UP: (_n: number) => {
-        this.display.move(this.parser.cursor.x, this.parser.cursor.y);
-      },
-      CUR_DOWN: (_n: number) => {
-        this.display.move(this.parser.cursor.x, this.parser.cursor.y);
-      },
-      CUR_FORWARD: (_n: number) => {
-        this.display.move(this.parser.cursor.x, this.parser.cursor.y);
-      },
-      CUR_BACK: (_n: number) => {
-        this.display.move(this.parser.cursor.x, this.parser.cursor.y);
-      },
       CHAR_MODE: () => {
         // TODO handle 6x6x6 256 color sequences
         this.display.fgColor =
@@ -88,19 +73,6 @@ class Ansi extends HTMLElement {
             this.parser.fgColor - 30 + (this.parser.attributes.BOLD ? 8 : 0)
           ];
         this.display.bgColor = palette[this.parser.bgColor - 40];
-      },
-      NEWLINE: () => {
-        this.display.move(this.parser.cursor.x, this.parser.cursor.y);
-      },
-      ERASE_DISPLAY: (n: number) => {
-        switch (n) {
-          case 2:
-            this.display.move(this.parser.cursor.x, this.parser.cursor.y);
-            break;
-        }
-      },
-      RESTORE_CUR: () => {
-        this.display.move(this.parser.cursor.x, this.parser.cursor.y);
       },
       EOF: (footer) => {
         // quick and nasty SAUCE parsing

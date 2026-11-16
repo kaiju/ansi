@@ -6,5 +6,6 @@ pkgs.mkShell {
     nodejs
     pnpm
     typescript
+    biome
   ];
 }
