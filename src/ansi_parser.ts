@@ -42,18 +42,28 @@ export default class ansi_parser {
   data: Uint8Array<ArrayBuffer>;
 
   columns: number;
+  rows: number = 0;
 
   // state
   fgColor: number = 37;
   bgColor: number = 40;
-  cursor = {
-    x: 0,
-    y: 0,
-  };
-  savedcursor = {
-    x: 0,
-    y: 0,
-  };
+
+  curX: number = 0;
+  _curY: number = 0;
+
+  get curY() {
+    return this._curY;
+  }
+
+  set curY(v) {
+    this._curY = v;
+    // Count total rows
+    this.rows = Math.max(this.rows, this._curY);
+  }
+
+  scurX: number = 0;
+  scurY: number = 0;
+
   attributes = {
     BOLD: false,
     UNDERLINE: false,
@@ -69,11 +79,11 @@ export default class ansi_parser {
   defaults() {
     this.fgColor = 37;
     this.bgColor = 40;
-    this.cursor = {
-      x: 0,
-      y: 0,
-    };
-    this.savedcursor = { ...this.cursor };
+    this.rows = 0;
+    this.curX = 0;
+    this.curY = 0;
+    this.scurX = 0;
+    this.scurY = 0;
     this.attributes = {
       BOLD: false,
       UNDERLINE: false,
@@ -100,32 +110,34 @@ export default class ansi_parser {
             switch (this.data[ci]) {
               case CUU: {
                 const c = Number(args) || 1;
-                this.cursor.y = Math.max(0, this.cursor.y - c);
+                this.curY = Math.max(0, this.curY - c);
                 fn.CUR_UP?.(c);
                 break;
               }
               case CUD: {
                 const c = Number(args) || 1;
-                this.cursor.y += c;
+                this.curY += c;
                 fn.CUR_DOWN?.(c);
                 break;
               }
               case CUF: {
                 const c = Number(args) || 1;
-                this.cursor.x = Math.min(this.columns - 1, this.cursor.x + c);
+                this.curX = Math.min(this.columns - 1, this.curX + c);
                 fn.CUR_FORWARD?.(c);
                 break;
               }
               case CUB: {
                 const c = Number(args) || 1;
-                this.cursor.x = Math.max(0, this.cursor.x - c);
+                this.curX = Math.max(0, this.curX - c);
                 fn.CUR_BACK?.(c);
                 break;
               }
               case CUP:
               case HVP: {
                 const [row, col] = args.split(";").map(Number);
-                this.cursor = { x: (col || 1) - 1, y: (row || 1) - 1 }; // these are 1 based and default to 1
+                // move x/y is 1 based and defaults to 1
+                this.curX = (col || 1) - 1;
+                this.curY = (row || 1) - 1;
                 fn.CUR_POS?.(row, col);
                 break;
               }
@@ -175,7 +187,8 @@ export default class ansi_parser {
                   case 1:
                     break;
                   case 2: // clear entire screen, reset cursor in ANSI.SYS
-                    this.cursor = { x: 0, y: 0 };
+                    this.curX = 0;
+                    this.curY = 0;
                     break;
                   case 3:
                     break;
@@ -187,11 +200,13 @@ export default class ansi_parser {
                 fn.ERASE_LINE?.(Number(args));
                 break;
               case SCP:
-                this.savedcursor = { ...this.cursor };
+                this.scurX = this.curX;
+                this.scurY = this.curY;
                 fn.SAVE_CUR?.();
                 break;
               case RCP:
-                this.cursor = { ...this.savedcursor };
+                this.curX = this.scurX;
+                this.curY = this.scurY;
                 fn.RESTORE_CUR?.();
                 break;
             }
@@ -206,8 +221,8 @@ export default class ansi_parser {
         // TODO- figure out a more complete newline strategy
       } else if (this.data[i] === CR) {
         // Carriage Return
-        this.cursor.x = 0;
-        this.cursor.y++;
+        this.curX = 0;
+        this.curY++;
         fn.NEWLINE?.();
       } else if (this.data[i] === EOF) {
         // EOF
@@ -219,14 +234,14 @@ export default class ansi_parser {
         fn.CHAR?.(this.data[i]);
 
         // Advance our cursor
-        if (this.cursor.x < this.columns - 1) {
-          this.cursor.x++;
+        if (this.curX < this.columns - 1) {
+          this.curX++;
         } else {
-          this.cursor.x = 0;
-          this.cursor.y++;
+          this.curX = 0;
+          this.curY++;
         }
       }
-      yield i+1;
+      yield i + 1;
     }
     return this.data.byteLength;
   }

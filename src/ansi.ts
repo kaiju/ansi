@@ -44,15 +44,15 @@ class Ansi extends HTMLElement {
 
     const palette = palettes.get("original");
 
-    // Run through the parser to count rows based on our column size.
+    // Do an initial parse of the file in order to get our row count so we can
+    // size the display
     for (const _ of this.parser.parse({})) { };
-    const rows: number = this.parser.cursor.y;
 
     // Set up our textmode display
     this.display = new textmodeDisplay();
     this.display.setAttribute("font", fontUrl);
     this.display.setAttribute("cols", columns.toString());
-    this.display.setAttribute("rows", rows.toString());
+    this.display.setAttribute("rows", this.parser.rows.toString());
     await this.display.init();
 
     this.shadowRoot?.replaceChildren(this.display);
@@ -61,7 +61,7 @@ class Ansi extends HTMLElement {
     const b = this.parser.parse({
       CHAR: (code: number) => {
         this.display
-          .move(this.parser.cursor.x, this.parser.cursor.y)
+          .move(this.parser.curX, this.parser.curY)
           .draw(code);
       },
       CHAR_MODE: () => {
