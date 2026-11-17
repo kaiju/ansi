@@ -4,6 +4,23 @@ Display ansi/ascii art in the browser via HTML5 Canvas.
 
 An old project of mine from 2009 that I've been slowly refactoring to get up to speed on modern (post-2015) javascript and web technologies.
 
+## Build
+
+Requires [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/). All additional dev tooling (typescript, vite, biome, etc) is installed as dev dependencies.
+
+```
+pnpm install
+pnpm build    # outputs to dist/ansi.js
+```
+
+A basic demo page is included for local development.
+
+```
+pnpm dev demo
+```
+
+and load https://localhost:5173
+
 ### Usage
 
 Use the `<ansi-file>` custom element:
