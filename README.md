@@ -20,9 +20,10 @@ Use the `<ansi-file>` custom element:
 
 `cols`: Column width to render by, defaults to `80`
 
+`baud`: Baud rate to display at
+
 ### TODO
 
-- Baud rate emulation
 - Configurable color palettes/iCE color support
 - Maybe write some actual tests, like an adult.
 - Blink support

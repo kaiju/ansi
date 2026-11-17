@@ -22,8 +22,15 @@ export default class textmodeDisplay extends HTMLElement {
   private cols: number;
   private rows: number;
 
-  cursorX: number = 0; // column position
-  cursorY: number = 0; // row position
+  curX: number = 0; // column position
+  curY: number = 0; // row position
+
+  dirty: boolean = false;
+
+  curXMin: number = 0;
+  curXMax: number = 0;
+  curYMin: number = 0;
+  curYMax: number = 0;
 
   fgColor: number;
   bgColor: number;
@@ -78,21 +85,28 @@ export default class textmodeDisplay extends HTMLElement {
     this.clear();
   }
 
-  // turns our rgb arrays into a 32 bit hex value we can easily smash into a Uint32Array
-  // stop calling this on every draw and just precompute the pallete when we move
-  // those into textmode
-  private pack([r, g, b]: number[]) {
-    return (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
-  }
-
   clear() {
     this.data.fill((0xff000000 | this.bgColor) >>> 0);
-    this.cursorX = 0;
-    this.cursorY = 0;
+    this.dirty = true;
+    this.curX = this.curXMin = 0;
+    this.curXMax = this.cols - 1;
+    this.curY = this.curYMin = 0;
+    this.curYMax = this.rows - 1;
   }
 
   draw(c: number) {
     if (this.font.glyphs[c] === undefined) return;
+
+    if (this.dirty === false) {
+      this.dirty = true;
+      this.curXMin = this.curXMax = this.curX;
+      this.curYMin = this.curYMax = this.curY;
+    } else {
+      this.curXMin = Math.min(this.curXMin, this.curX);
+      this.curXMax = Math.max(this.curXMax, this.curX);
+      this.curYMin = Math.min(this.curYMin, this.curY);
+      this.curYMax = Math.max(this.curYMax, this.curY);
+    }
 
     // walk each bit in the glyph bitmap and turn it into a rgba pixel array
     for (let bit = 0; bit < this.font.glyphs[c].length; bit++) {
@@ -104,10 +118,10 @@ export default class textmodeDisplay extends HTMLElement {
       // TODO- understand this math a little better
       // where are we column-wise within the glyph dimensions
       const pcol =
-        this.cursorX * this.font.glyphWidth + (bit % this.font.glyphWidth);
+        this.curX * this.font.glyphWidth + (bit % this.font.glyphWidth);
       // where are we row-wise within the glyph dimensions
       const prow =
-        this.cursorY * this.font.glyphHeight +
+        this.curY * this.font.glyphHeight +
         Math.floor(bit / this.font.glyphWidth);
 
       // translate glyph pixel dimension to our canvas buffer
@@ -119,14 +133,23 @@ export default class textmodeDisplay extends HTMLElement {
   }
 
   move(x: number, y: number) {
-    this.cursorX = x;
-    this.cursorY = y;
+    this.curX = x;
+    this.curY = y;
     return this;
   }
 
-  // TODO implement dirty rectangles
   render() {
-    this.context.putImageData(this.imageData, 0, 0, 0, 0, this.imageData.width, this.imageData.height);
+    if (!this.dirty) return;
+    this.context.putImageData(
+      this.imageData,
+      0,
+      0,
+      this.curXMin * this.font.glyphWidth,
+      this.curYMin * this.font.glyphHeight,
+      (this.curXMax - this.curXMin + 1) * this.font.glyphWidth,
+      (this.curYMax - this.curYMin + 1) * this.font.glyphHeight,
+    );
+    this.dirty = false;
   }
 }
 window.customElements.define("textmode-display", textmodeDisplay);
