@@ -1,0 +1,21 @@
+{
+  "use_on_type_format": false,
+  "tab_size": 2,
+  "hard_tabs": false,
+  "languages": {
+    "JavaScript": {
+      "language_servers": ["typescript-language-server", "!vtsls", "..."]
+    },
+    "TypeScript": {
+      "language_servers": ["typescript-language-server", "!vtsls", "..."]
+    },
+  },
+  "lsp": {
+    "typescript-language-server": {
+      "binary": {
+        "path": "tsc",
+        "arguments": ["--lsp", "--stdio"]
+      }
+    }
+  }
+}

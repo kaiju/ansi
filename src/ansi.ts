@@ -1,11 +1,11 @@
 import ansi_parser from "./ansi_parser";
-import defaultFontUrl from "./fonts/ibm9x16.psf?url";
 import { palettes } from "./palettes";
 import textmodeDisplay from "./textmode";
 
 class Ansi extends HTMLElement {
-  private parser: ansi_parser;
-  private display: textmodeDisplay;
+  static observedAttributes: string[] = ["src", "cols", "baud", "font"];
+  private display: textmodeDisplay = new textmodeDisplay();
+  private controller?: AbortController;
 
   constructor() {
     super();
@@ -16,15 +16,24 @@ class Ansi extends HTMLElement {
     this.load();
   }
 
+  attributeChangedCallback(_name: string, oldValue: string, newValue: string) {
+    if (oldValue !== newValue && this.isConnected) this.load();
+  }
+
   private async load() {
+    // cancel any previous invocation
+    this.controller?.abort();
+
+    const controller = new AbortController();
+    this.controller = controller;
+    const signal = controller.signal;
+
     // get src
     if (!this.hasAttribute("src")) {
-      throw new Error("Missing src attribute");
+      // nothing more to do here!
+      return;
     }
     const url = this.getAttribute("src");
-
-    // get optional font
-    const fontUrl: string = this.getAttribute("font") ?? defaultFontUrl;
 
     // get optional column
     const columns: number = this.hasAttribute("cols")
@@ -35,42 +44,44 @@ class Ansi extends HTMLElement {
     const baud: number = Number(this.getAttribute("baud"));
 
     // grab our ansi data
-    const response = await fetch(url);
+    const response = await fetch(url, { signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.arrayBuffer();
 
     // Set up our parser
-    this.parser = new ansi_parser(data, columns);
+    const parser = new ansi_parser(data, columns);
 
     const palette = palettes.get("original");
 
     // Do an initial parse of the file in order to get our row count so we can
     // size the display
-    for (const _ of this.parser.parse({})) { };
+    for (const _ of parser.parse({})) { };
 
     // Set up our textmode display
-    this.display = new textmodeDisplay();
-    this.display.setAttribute("font", fontUrl);
+    if (this.hasAttribute("font")) this.display.setAttribute("font", this.getAttribute("font"));
     this.display.setAttribute("cols", columns.toString());
-    this.display.setAttribute("rows", this.parser.rows.toString());
+    this.display.setAttribute("rows", parser.rows.toString());
+    this.display.fgColor = palette[37];
+    this.display.bgColor = palette[40];
     await this.display.init();
+    if (signal.aborted) return;
 
     this.shadowRoot?.replaceChildren(this.display);
 
     // render time
-    const b = this.parser.parse({
+    const b = parser.parse({
       CHAR: (code: number) => {
         this.display
-          .move(this.parser.curX, this.parser.curY)
+          .move(parser.curX, parser.curY)
           .draw(code);
       },
       CHAR_MODE: () => {
         // TODO handle 6x6x6 256 color sequences
         this.display.fgColor =
           palette[
-            this.parser.fgColor - 30 + (this.parser.attributes.BOLD ? 8 : 0)
+            parser.fgColor - 30 + (parser.attributes.BOLD ? 8 : 0)
           ];
-        this.display.bgColor = palette[this.parser.bgColor - 40];
+        this.display.bgColor = palette[parser.bgColor - 40];
       },
       EOF: (footer) => {
         // quick and nasty SAUCE parsing
@@ -103,6 +114,7 @@ class Ansi extends HTMLElement {
     let start: number;
     let bytesRead: number = 0;
     const tick = (timestamp: number) => {
+      if (signal.aborted) return;
       if (start === undefined) start = timestamp;
 
       // How much time has elapsed since we started?

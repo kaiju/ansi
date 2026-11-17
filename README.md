@@ -16,7 +16,7 @@ pnpm build    # outputs to dist/ansi.js
 A basic demo page is included for local development.
 
 ```
-pnpm dev demo
+pnpm dev
 ```
 
 and load https://localhost:5173
@@ -31,13 +31,13 @@ Use the `<ansi-file>` custom element:
 
 ### Attributes
 
-`src`: URL of the ANSI file to render
+`src`: URL of the ANSI file to render.
 
-`font`: URL of a PSF2 (linux console) format font
+`font`: URL of a PSF2 (linux console) format font. IBM VGA 9x16 is the default.
 
-`cols`: Column width to render by, defaults to `80`
+`cols`: Column width to render by, defaults to `80`.
 
-`baud`: Baud rate to display at
+`baud`: Baud rate to display at.
 
 ## TODO
 

@@ -6,7 +6,7 @@
  * Author: Josh Mast <josh@mast.zone>
  */
 
-import defaultFontUrl from "./fonts/ibm9x16.psf?url";
+import defaultFontUrl from "./fonts/ibm-vga-9x16.psf?url";
 import textmodeFont from "./textmode_font";
 
 export default class textmodeDisplay extends HTMLElement {
