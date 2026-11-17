@@ -21,7 +21,7 @@ pnpm dev demo
 
 and load https://localhost:5173
 
-### Usage
+## Usage
 
 Use the `<ansi-file>` custom element:
 
@@ -29,7 +29,7 @@ Use the `<ansi-file>` custom element:
 <ansi-file src="my-ansi.ans" font="ibm9x16.psf"></ansi-file>
 ```
 
-#### Attributes
+### Attributes
 
 `src`: URL of the ANSI file to render
 
@@ -39,7 +39,7 @@ Use the `<ansi-file>` custom element:
 
 `baud`: Baud rate to display at
 
-### TODO
+## TODO
 
 - Configurable color palettes/iCE color support
 - Maybe write some actual tests, like an adult.
