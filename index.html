@@ -105,13 +105,14 @@
   });
 
   const params = new URLSearchParams(location.search);
-  const url = params.get("url") ?? "examples/ns-bp09.ans";
+  const url = params.get("url");
   const baud = params.get("baud") ?? "";
 
+  if (url) urlBar.value = url;
   baudSelect.value = baud;
 
   if (baudSelect.value) ansiElement.setAttribute("baud", baudSelect.value);
-  ansiElement.setAttribute("src", url);
+  ansiElement.setAttribute("src", url ?? "examples/ns-bp09.ans");
 
 
 </script>
