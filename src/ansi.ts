@@ -55,7 +55,36 @@ class Ansi extends HTMLElement {
 
     // Do an initial parse of the file in order to get our row count so we can
     // size the display
-    for (const _ of parser.parse({})) { };
+    for (const _ of parser.parse({
+      EOF: (footer) => {
+        // quick and nasty SAUCE parsing
+        // read the last 128 bytes
+        if (footer.byteLength >= 128) {
+          const s = footer.subarray(footer.length - 128);
+          const decoder = new TextDecoder();
+
+          const header = decoder.decode(s.subarray(0, 5));
+
+          if (header !== "SAUCE") return;
+
+          const _version = decoder.decode(s.subarray(5, 7));
+          const title = decoder.decode(s.subarray(7, 42)).trimEnd();
+          const author = decoder.decode(s.subarray(42, 62)).trimEnd();
+          const group = decoder.decode(s.subarray(62, 82)).trimEnd();
+
+          const date = decoder.decode(s.subarray(82, 90));
+          const year = date.substring(0, 4);
+          const month = date.substring(4, 6);
+          const day = date.substring(6, 8);
+
+          const label = `${title} by ${author} <${group}> on ${month}-${day}-${year}`;
+          this.display.setAttribute("label", label);
+          this.textContent = label;
+
+          this.dispatchEvent(new CustomEvent("sauce", { detail: label }));
+        }
+      },
+    })) { };
 
     // Set up our textmode display
     if (this.hasAttribute("font")) this.display.setAttribute("font", this.getAttribute("font"));
@@ -82,32 +111,6 @@ class Ansi extends HTMLElement {
             parser.fgColor - 30 + (parser.attributes.BOLD ? 8 : 0)
           ];
         this.display.bgColor = palette[parser.bgColor - 40];
-      },
-      EOF: (footer) => {
-        // quick and nasty SAUCE parsing
-        // read the last 128 bytes
-        if (footer.byteLength >= 128) {
-          const s = footer.subarray(footer.length - 128);
-          const decoder = new TextDecoder();
-
-          const header = decoder.decode(s.subarray(0, 5));
-
-          if (header !== "SAUCE") return;
-
-          const _version = decoder.decode(s.subarray(5, 7));
-          const title = decoder.decode(s.subarray(7, 42)).trimEnd();
-          const author = decoder.decode(s.subarray(42, 62)).trimEnd();
-          const group = decoder.decode(s.subarray(62, 82)).trimEnd();
-
-          const date = decoder.decode(s.subarray(82, 90));
-          const year = date.substring(0, 4);
-          const month = date.substring(4, 6);
-          const day = date.substring(6, 8);
-
-          const label = `${title} by ${author} <${group}> on ${month}-${day}-${year}`;
-          this.display.setAttribute("label", label);
-          this.textContent = label;
-        }
       },
     });
 

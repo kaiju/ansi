@@ -1,118 +1,158 @@
-<style>
-	:root { color-scheme: dark; }
-	body {
-		margin: 0;
-		background: #000;
-		color: #b8b8b8;
-		font-family: sans-serif;
-		display: grid;
-		grid-template-columns: 1fr 200px;
-		grid-template-rows: auto 1fr;
-		height: 100vh;
-	}
-	#url-form {
-		grid-column: 1 / -1;
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 8px;
-		border-bottom: 1px solid #333;
-	}
-	#ansi-url { flex: 1; }
-	main { overflow: auto; padding: 8px; display: flex; }
-	#ansi { margin: auto; }
-	aside {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		padding: 8px;
-		border-left: 1px solid #333;
-	}
-	aside select { margin-bottom: 8px; }
-	input, select, button {
-		background: #1a1a1a;
-		color: #b8b8b8;
-		border: 1px solid #444;
-		border-radius: 3px;
-		padding: 4px 6px;
-		font: inherit;
-	}
-	input:focus, select:focus, button:focus {
-		outline: none;
-		border-color: #888;
-	}
-	button { cursor: pointer; }
-	button:hover { background: #2a2a2a; }
-</style>
+<!doctype html>
+<html lang="en">
+  <title>ANSI Demo</title>
+  <head>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        background: #000;
+        color: #b8b8b8;
+        font-family: sans-serif;
+        display: grid;
+        grid-template-columns: 1fr 200px;
+        grid-template-rows: auto 1fr;
+        height: 100vh;
+      }
+      #url-form {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border-bottom: 1px solid #333;
+      }
+      #ansi-url {
+        flex: 1;
+      }
+      main {
+        overflow: auto;
+        padding: 8px;
+        display: flex;
+      }
+      #ansi {
+        margin: auto;
+      }
+      aside {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px;
+        border-left: 1px solid #333;
+      }
+      aside select {
+        margin-bottom: 8px;
+      }
+      input,
+      select,
+      button {
+        background: #1a1a1a;
+        color: #b8b8b8;
+        border: 1px solid #444;
+        border-radius: 3px;
+        padding: 4px 6px;
+        font: inherit;
+      }
+      input:focus,
+      select:focus,
+      button:focus {
+        outline: none;
+        border-color: #888;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        background: #2a2a2a;
+      }
+    </style>
+  </head>
 
-<form id="url-form">
-	<input type="text" id="ansi-url" placeholder="https://example.com/art.ans">
-	<button id="btn-load" type="submit">Load</button>
-	<select id="baud-select">
-	  <option value="">Baud Rate</option>
-		<option value="300">300</option>
-		<option value="1200">1200</option>
-		<option value="2400">2400</option>
-		<option value="4800">4800</option>
-		<option value="9600">9600</option>
-		<option value="14400">14.4k</option>
-		<option value="28800">28.8k</option>
-		<option value="38400">33.6k</option>
-		<option value="57600">56k</option>
-	</select>
-</form>
+  <body>
+    <form id="url-form">
+      <input
+        type="text"
+        id="ansi-url"
+        placeholder="https://example.com/art.ans"
+      />
+      <button id="btn-load" type="submit">Load</button>
+      <select id="baud-select">
+        <option value="">Baud Rate</option>
+        <option value="300">300</option>
+        <option value="1200">1200</option>
+        <option value="2400">2400</option>
+        <option value="4800">4800</option>
+        <option value="9600">9600</option>
+        <option value="14400">14.4k</option>
+        <option value="28800">28.8k</option>
+        <option value="38400">33.6k</option>
+        <option value="57600">56k</option>
+      </select>
+    </form>
 
-<main>
-	<div id="ansi">
-	  <ansi-file></ansi-file>
-	</div>
-</main>
+    <main>
+      <div id="ansi">
+        <ansi-file></ansi-file>
+      </div>
+    </main>
 
-<aside>
-	<label for="font-select">Font</label>
-	<select id="font-select">
-    <option value="">Default</option>
-	</select>
-</aside>
+    <aside>
+      <label for="font-select">Font</label>
+      <select id="font-select">
+        <option value="">Default</option>
+      </select>
+    </aside>
 
-<script type="module" src="src/ansi.ts"></script>
-<script type="module">
+    <script type="module" src="src/ansi.ts"></script>
+    <script type="module">
+      ///  src="demo/ns-bp09.ans"
 
-  ///  src="demo/ns-bp09.ans"
+      const form = document.getElementById("url-form");
+      const ansiElement = document.querySelector("div#ansi > ansi-file");
+      const baudSelect = document.getElementById("baud-select");
+      const fontSelect = document.getElementById("font-select");
+      const btnLoad = document.getElementById("btn-load");
+      const urlBar = document.getElementById("ansi-url");
 
-  const form = document.getElementById("url-form");
-  const ansiElement = document.querySelector("div#ansi > ansi-file");
-  const baudSelect = document.getElementById("baud-select");
-  const fontSelect = document.getElementById("font-select");
-  const btnLoad = document.getElementById("btn-load");
-  const urlBar = document.getElementById("ansi-url");
+      ansiElement.addEventListener("sauce", (e) => {
+        document.title = `ANSI Demo | ${e.detail}`;
+      });
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    urlBar.value && ansiElement.setAttribute("src", urlBar.value);
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        urlBar.value && ansiElement.setAttribute("src", urlBar.value);
 
-    const query = new URLSearchParams(location.search);
-    query.set("url", urlBar.value);
-    history.replaceState(null, "", `?${query}`);
+        const query = new URLSearchParams(location.search);
+        query.set("url", urlBar.value);
+        history.replaceState(null, "", `?${query}`);
+      });
 
-  });
+      baudSelect.addEventListener("change", () => {
+        baudSelect.value
+          ? ansiElement.setAttribute("baud", baudSelect.value)
+          : ansiElement.removeAttribute("baud");
+        const query = new URLSearchParams(location.search);
+        baudSelect.value
+          ? query.set("baud", baudSelect.value)
+          : query.delete("baud");
+        history.replaceState(
+          null,
+          "",
+          query.size ? `?${query}` : location.pathname,
+        );
+      });
 
-  baudSelect.addEventListener("change", () => {
-    baudSelect.value ? ansiElement.setAttribute("baud", baudSelect.value) : ansiElement.removeAttribute("baud");
-    const query = new URLSearchParams(location.search);
-    baudSelect.value ? query.set("baud", baudSelect.value) : query.delete("baud");
-    history.replaceState(null, "", query.size ? `?${query}` : location.pathname);
-  });
+      const params = new URLSearchParams(location.search);
+      const url = params.get("url");
+      const baud = params.get("baud") ?? "";
 
-  const params = new URLSearchParams(location.search);
-  const url = params.get("url");
-  const baud = params.get("baud") ?? "";
+      if (url) urlBar.value = url;
+      baudSelect.value = baud;
 
-  if (url) urlBar.value = url;
-  baudSelect.value = baud;
-
-  if (baudSelect.value) ansiElement.setAttribute("baud", baudSelect.value);
-  ansiElement.setAttribute("src", url ?? "examples/ns-bp09.ans");
-
-
-</script>
+      if (baudSelect.value) ansiElement.setAttribute("baud", baudSelect.value);
+      ansiElement.setAttribute("src", url ?? "examples/ns-bp09.ans");
+    </script>
+  </body>
+</html>
