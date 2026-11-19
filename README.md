@@ -26,7 +26,7 @@ and load https://localhost:5173
 Use the `<ansi-file>` custom element:
 
 ```
-<ansi-file src="my-ansi.ans" font="ibm9x16.psf"></ansi-file>
+<ansi-file src="my-ansi.ans"></ansi-file>
 ```
 
 ### Attributes
