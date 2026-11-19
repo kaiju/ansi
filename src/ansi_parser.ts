@@ -14,7 +14,7 @@ const CUF: number = 67; // Cursor forward
 const CUB: number = 68; // Cursor back
 const CUP: number = 72; // Cursor position
 const SGR: number = 109; // Select Graphic Rendition (i.e. mode change)
-const ED: number = 93; // Erase in display
+const ED: number = 74; // Erase in display
 const EL: number = 75; // Erase line
 const HVP: number = 102; // Horizontal vertical position
 const SCP: number = 115; // Save cursor position
@@ -180,24 +180,24 @@ export default class ansi_parser {
                 break;
               }
               case ED: {
-                const n: number = Number(args);
+                const n: number = Number(args) || 0;
                 switch (n) {
-                  case 0:
+                  case 0: // clear from cursor to end of screen
                     break;
-                  case 1:
+                  case 1: // clear from cursor to beginning of screen
                     break;
                   case 2: // clear entire screen, reset cursor in ANSI.SYS
                     this.curX = 0;
                     this.curY = 0;
                     break;
-                  case 3:
+                  case 3: // clear screen and scrollback buffer (x-term specific)
                     break;
                 }
                 fn.ERASE_DISPLAY?.(n);
                 break;
               }
               case EL:
-                fn.ERASE_LINE?.(Number(args));
+                fn.ERASE_LINE?.(Number(args) || 0);
                 break;
               case SCP:
                 this.scurX = this.curX;

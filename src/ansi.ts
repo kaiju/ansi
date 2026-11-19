@@ -112,6 +112,14 @@ class Ansi extends HTMLElement {
           ];
         this.display.bgColor = palette[parser.bgColor - 40];
       },
+      ERASE_DISPLAY: (n) => {
+        switch(n) {
+          case 2:
+            this.display.clear();
+            break;
+        }
+
+      }
     });
 
     let start: number;

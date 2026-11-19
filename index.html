@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
-  <title>ANSI Demo</title>
   <head>
+    <title>ANSI Demo</title>
     <style>
       :root {
         color-scheme: dark;
@@ -87,7 +87,7 @@
         <option value="9600">9600</option>
         <option value="14400">14.4k</option>
         <option value="28800">28.8k</option>
-        <option value="38400">33.6k</option>
+        <option value="33600">33.6k</option>
         <option value="57600">56k</option>
       </select>
     </form>
@@ -107,8 +107,6 @@
 
     <script type="module" src="src/ansi.ts"></script>
     <script type="module">
-      ///  src="demo/ns-bp09.ans"
-
       const form = document.getElementById("url-form");
       const ansiElement = document.querySelector("div#ansi > ansi-file");
       const baudSelect = document.getElementById("baud-select");
