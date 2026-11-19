@@ -91,16 +91,9 @@
     e.preventDefault();
     urlBar.value && ansiElement.setAttribute("src", urlBar.value);
 
-    /*
-    const query = new URLSearchParams({});
-    if (urlInput.value) {
-      query.set("url", urlBar.value);
-    } else {
-      query.set("file", ansiSelect.selectedOptions[0].text);
-    }
+    const query = new URLSearchParams(location.search);
+    query.set("url", urlBar.value);
     history.replaceState(null, "", `?${query}`);
-    */
-
 
   });
 
